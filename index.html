@@ -1,0 +1,1593 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Design a mission, pick a launch date, and fly it to Mars. A teaching game about designing and flying space missions.">
+<meta name="theme-color" content="#0B1430">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mars Mission">
+<meta property="og:title" content="Mars Mission Designer">
+<meta property="og:description" content="Design a mission, pick a launch date, and fly it to Mars.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='22' fill='%230B1430' stroke='%234FC3CC' stroke-width='2'/%3E%3Ccircle cx='24' cy='24' r='4' fill='%23F2B632'/%3E%3Ccircle cx='36' cy='13' r='4' fill='%23C2502E'/%3E%3C/svg%3E">
+<title>Mars Mission Designer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF1F5;--surface:#FFFFFF;--ink:#16213A;--muted:#58657E;--line:#C9D1DD;--track:#DDE3EC;
+  --accent:#0E7C86;--accent-ink:#FFFFFF;--warn:#9A6A00;--bad:#B3261E;--good:#2E7D32;--tile:#E3F1F2;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0F1827;--surface:#172236;--ink:#E7EDF7;--muted:#9AA8C0;--line:#2B3A55;--track:#24324B;
+    --accent:#4FC3CC;--accent-ink:#06222A;--warn:#E8B64A;--bad:#FF8A80;--good:#7BD389;--tile:#1F3350;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Space Grotesk","Tajawal","Segoe UI",Tahoma,system-ui,sans-serif;line-height:1.5;font-size:16px}
+.wrap{max-width:560px;margin:0 auto;padding:0 16px 24px}
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:18px 0 4px}
+.brand{display:flex;gap:12px;align-items:center}
+.patch{flex:none;width:46px;height:46px}
+h1{font-size:22px;line-height:1.2;margin:0;font-weight:700}
+.tag{margin:2px 0 0;color:var(--muted);font-size:13px}
+h2{font-size:19px;margin:18px 0 6px}
+h3{font-size:16px;margin:24px 0 2px;padding-top:16px;border-top:1px solid var(--line)}
+.hint{margin:0 0 10px;color:var(--muted);font-size:14px}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.mini{background:transparent;border:1px solid var(--line);border-radius:999px;padding:6px 14px;cursor:pointer;white-space:nowrap}
+.steps{display:flex;margin:12px 0 14px}
+.steps span{flex:1;text-align:center;font-size:13px;color:var(--muted);position:relative;padding-top:20px}
+.steps span::before{content:'';position:absolute;top:2px;inset-inline-start:50%;width:12px;height:12px;margin-inline-start:-6px;border-radius:50%;background:var(--bg);border:2px solid var(--line);z-index:1}
+.steps span::after{content:'';position:absolute;top:7px;inset-inline-start:-50%;width:100%;height:2px;background:var(--line)}
+.steps span:first-child::after{display:none}
+.steps span.done::before,.steps span.on::before{background:var(--accent);border-color:var(--accent)}
+.steps span.done::after,.steps span.on::after{background:var(--accent)}
+.steps span.on{color:var(--ink);font-weight:700}
+/* flight-plan panel: the one bold element */
+.space{position:relative;border-radius:18px;overflow:hidden;background:radial-gradient(120% 100% at 50% 42%,#1D3166 0%,#0B1430 72%);border:1px solid rgba(255,255,255,.08);margin:6px 0 4px}
+.space svg{display:block;width:100%;height:auto}
+.orb{fill:none;stroke:rgba(255,255,255,.14)}
+.arc{fill:none;stroke:rgba(255,255,255,.32);stroke-dasharray:2 4;stroke-width:1.2}
+.trail{fill:none;stroke:#5ED6DE;stroke-width:2.4;stroke-linecap:round}
+.trail.glow{stroke-width:8;opacity:.22}
+.space svg text{fill:#B7C4E4;font-size:10px;font-family:inherit}
+.pulse{fill:none;stroke:#5ED6DE;stroke-width:1.2;transform-box:fill-box;transform-origin:center;animation:pulse 1.6s ease-out infinite}
+@keyframes pulse{from{opacity:.9;transform:scale(.6)}to{opacity:0;transform:scale(2.6)}}
+@media (prefers-reduced-motion:reduce){.pulse{animation:none;opacity:.5}}
+.hud{position:absolute;inset-inline-start:14px;top:10px;color:#fff;line-height:1.1}
+.hud b{display:block;font-size:34px;font-weight:700;font-variant-numeric:tabular-nums}
+.hud b.sm{font-size:18px}
+.hud small{display:block;color:#B7C4E4;font-size:12px}
+.chip{position:absolute;inset-inline-end:10px;top:10px;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:6px 12px;cursor:pointer;font-size:14px}
+/* options */
+.opt{display:flex;gap:12px;width:100%;text-align:start;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin:0 0 8px;cursor:pointer}
+.opt[aria-checked=true]{border-color:var(--accent);outline:1px solid var(--accent);background:var(--tile);background:color-mix(in srgb,var(--accent) 9%,var(--surface))}
+.opt:disabled{opacity:.45;cursor:not-allowed}
+.ic{flex:none;width:46px;height:46px;border-radius:12px;background:var(--tile);color:var(--accent);display:grid;place-items:center}
+.ic svg{width:27px;height:27px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.ob{display:block;flex:1;min-width:0}
+.on{display:block;font-weight:700}
+.od{display:block;color:var(--muted);font-size:14px;line-height:1.35}
+.os{display:flex;flex-wrap:wrap;gap:2px 14px;margin-top:4px;font-size:13px;color:var(--muted)}
+.tick{flex:none;position:relative;width:22px;height:22px;border:2px solid var(--line);border-radius:50%}
+.tick.sq{border-radius:6px}
+.tick::after{content:'';position:absolute;left:50%;top:50%;width:5px;height:10px;border:solid var(--accent-ink);border-width:0 2.5px 2.5px 0;transform:translate(-50%,-62%) rotate(45deg);opacity:0}
+.opt[aria-checked=true] .tick{background:var(--accent);border-color:var(--accent)}
+.opt[aria-checked=true] .tick::after{opacity:1}
+/* meters */
+.dock{position:sticky;bottom:0;background:var(--bg);border-top:1px solid var(--line);padding:10px 0 calc(10px + env(safe-area-inset-bottom));margin-top:18px}
+.gauge{display:grid;grid-template-columns:104px 1fr auto;gap:10px;align-items:center;font-size:13px;margin:5px 0}
+.bar{height:10px;border-radius:5px;background:var(--track);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:5px;background:var(--good)}
+.gauge.mid .bar i{background:var(--warn)}
+.gauge.over .bar i{background:var(--bad)}
+.gauge.over b{color:var(--bad)}
+.gauge b{font-variant-numeric:tabular-nums;white-space:nowrap}
+.btn{display:block;width:100%;padding:15px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-weight:700;cursor:pointer;margin:8px 0}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.err{color:var(--bad);font-size:14px;margin:4px 0}
+.warn{color:var(--warn);font-size:14px;margin:4px 0}
+.row{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.row b.bad{color:var(--bad)}
+input[type=range]{width:100%;accent-color:var(--accent);margin:8px 0}
+.log{list-style:none;padding:0;margin:8px 0}
+.log li{padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.log li:first-child{font-weight:700}
+.sheet{position:fixed;left:0;right:0;inset-inline:0;bottom:0;background:var(--surface);border-top:3px solid var(--accent);border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));max-width:560px;margin:0 auto;box-shadow:0 -8px 24px rgba(0,0,0,.3)}
+.sheet h3{margin:0 0 4px;padding:0;border:0}
+.sheet p{margin:0 0 8px;color:var(--muted)}
+.pad{height:240px}
+.result{margin:12px 0;padding:16px;border-radius:14px;border:2px solid var(--line)}
+.result.ok{border-color:var(--good);background:var(--surface);background:color-mix(in srgb,var(--good) 12%,var(--surface))}
+.result.fail{border-color:var(--bad);background:var(--surface);background:color-mix(in srgb,var(--bad) 10%,var(--surface))}
+.result h2{margin:0 0 4px}
+.result p{margin:0}
+.stars{font-size:32px;letter-spacing:4px;color:#E5A100;margin-top:6px}
+.hbtns{display:flex;gap:8px;align-items:center}
+.mini.round{width:36px;height:36px;padding:0;border-radius:50%;font-weight:700}
+.tip{border-inline-start:3px solid var(--accent);padding:6px 10px;margin:8px 0;background:var(--tile);border-radius:6px;font-size:14px}
+.src{display:block;color:var(--muted);font-size:12px;overflow-wrap:anywhere}
+.team{margin:14px 0 0;font-size:14px;color:var(--muted)}
+.team b{display:block;color:var(--ink)}
+.big{font-size:25px;line-height:1.25;margin:18px 0 6px}
+.how{list-style:none;counter-reset:n;padding:0;margin:10px 0 16px}
+.how li{counter-increment:n;display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}
+.how li::before{content:counter(n);flex:none;width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700;font-size:14px}
+a{color:var(--accent);word-break:break-all}
+/* mission console */
+.fbar{display:flex;justify-content:space-between;align-items:center;padding:14px 0 8px}
+.console{background:#0B1430;border-radius:18px;overflow:hidden;border:1px solid rgba(255,255,255,.1);color:#fff}
+.hudrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:10px}
+.hb{background:#14214A;border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:8px 4px;text-align:center;min-width:0}
+.hb small{display:block;color:#AEBBDB;font-size:12px}
+.hb b{display:block;color:#FFD43B;font-size:14.5px;line-height:1.3;overflow-wrap:break-word;word-break:normal;font-variant-numeric:tabular-nums}
+#h3{white-space:nowrap;font-size:13.5px}
+.vp{position:relative;width:100%;aspect-ratio:3/4;max-height:70vh;background:#030614}
+.vp canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.vtxt{position:absolute;top:10px;left:12px;right:12px;text-align:center;pointer-events:none}
+.vtxt h3{margin:0;padding:0;border:0;color:#FFD43B;font-size:22px;text-shadow:0 2px 8px rgba(0,0,0,.6)}
+.vtxt p{margin:6px 0 0;color:#fff;font-size:14.5px;line-height:1.45;text-shadow:0 1px 6px rgba(0,0,0,.7)}
+.big{position:absolute;left:0;right:0;top:42%;text-align:center;font-size:88px;font-weight:700;color:#fff;text-shadow:0 0 28px #FFB347;pointer-events:none;line-height:1}
+.vchip{position:absolute;left:10px;right:10px;bottom:10px;text-align:center;font-size:13px;color:#fff;background:rgba(0,0,0,.4);border-radius:999px;padding:6px 12px}
+#vrep{position:absolute;left:50%;transform:translateX(-50%);bottom:16px;width:72%;margin:0}
+.btn.gold{background:#FFD43B;color:#1A1A1A;border-color:#FFD43B}
+.ftabs{display:flex;gap:8px;overflow-x:auto;padding:10px 10px 6px;scrollbar-width:none}
+.ftabs::-webkit-scrollbar{display:none}
+.ftab{flex:none;padding:10px 14px;border-radius:12px;background:#1B2748;color:#8FA0C4;border-bottom:3px solid transparent;white-space:nowrap;font-size:14px}
+.ftab.done{border-color:#7BD389;color:#D5F5DB}
+.ftab.now{background:#FFD43B;color:#1A1A1A;font-weight:700}
+.ctrls{display:flex;gap:8px;padding:6px 10px 12px}
+.cb{flex:1;min-width:0;padding:12px 6px;border-radius:12px;border:0;background:#FFD43B;color:#1A1A1A;font-weight:700;font-size:15px;cursor:pointer}
+.cb.alt{background:#1B2748;color:#fff}
+select.cb{appearance:none;-webkit-appearance:none;text-align:center;text-align-last:center}
+#fpanel{margin-top:14px}
+ul.plain{padding-inline-start:20px;margin:6px 0}
+ul.plain li{margin:6px 0;overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<noscript><p style="padding:16px">Please enable JavaScript to play. / يرجى تفعيل جافاسكربت للعب.</p></noscript>
+
+<script>
+'use strict';
+let dip=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();dip=e;if(S.phase==='intro')render();});
+window.addEventListener('appinstalled',()=>{dip=null;if(S.phase==='intro')render();});
+function installApp(){if(!dip)return;dip.prompt();dip.userChoice.finally(()=>{dip=null;render();});}
+if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0){
+  window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});
+}
+
+/* ---------- Text (English and Arabic) ---------- */
+const L={
+en:{
+title:'Mars Mission Designer',
+tag:'Design a mission, pick a launch date, and fly it to Mars.',
+langbtn:'العربية',
+s_design:'Design',s_window:'Launch date',s_flight:'Flight',s_report:'Report',
+g_mission:'Mission type',g_launcher:'Launch vehicle',g_power:'Power',g_comms:'Antenna',g_instr:'Science instruments',g_shield:'Radiation shield',g_entry:'Landing system',g_ls:'Life support',
+h_launcher:'Heavier ships need bigger rockets. Watch the mass meter.',
+h_power:'Sunlight is weak at Mars. Nuclear power costs more but ignores dust storms.',
+h_comms:'A better antenna sends more science data home.',
+h_instr:'Each instrument adds science points, and also mass, power, and cost.',
+h_shield:'A shield blocks radiation but adds mass.',
+h_entry:'Landing is the riskiest step. Safer systems weigh more and cost more.',
+h_ls:'Supplies must last the whole trip.',
+crew_note:'Crew: 4 astronauts.',
+m_budget:'Budget',m_mass:'Mass',m_power:'Power',
+u_kg:'kg',u_w:'W',u_m:'$M',u_days:'days',u_msv:'mSv',
+e_budget:'Over budget by {n} $M.',
+e_mass:'Ship is {n} kg too heavy for this rocket.',
+e_power:'Needs {n} W more power.',
+btn_next:'Choose launch date',btn_back:'Back to design',btn_launch:'Launch',btn_redesign:'Adjust design',btn_new:'New mission',btn_speed:'Speed ×{n}',
+st_cap:'Carries {n} kg',st_rel:'{n}% reliable',st_w:'{n} W',st_sci:'Science ×{n}',st_pts:'{n} science points',st_block:'Blocks {n}% of radiation',st_safe:'{n}% safe landing',st_days:'Lasts {n} days',st_mass:'{n} kg',st_cost:'${n}M',st_out:'Makes {n} W',st_use:'Uses {n} W',
+w_title:'Launch window',
+w_text:'Earth and Mars line up well about every 26 months. Launching at the center of the window lets you carry more and arrive sooner.',
+w_date:'Launch date',w_center:'Window center',w_early:'{n} months early',w_late:'{n} months late',
+w_travel:'Travel time',w_cap:'Rocket capacity on this date',w_mass:'Your ship',w_days:'{n} days',
+w_ls_warn:'Life support lasts {a} days, but this trip takes {b} days.',
+f_day:'Day {d} of {t}',f_launching:'Launching…',f_dayl:'Day',f_of:'of {t} days',f_health:'Hardware health',f_rad:'Radiation dose',f_sup:'Supplies left',f_log:'Mission log',
+ev_storm_t:'Solar storm',ev_storm_x:'A burst of fast particles is heading for your ship.',ev_storm_a:'Shelter and pause work (costs 2 days of supplies)',ev_storm_b:'Keep working',
+ev_fault_t:'System fault',ev_fault_x:'The main computer keeps restarting.',ev_fault_a:'Reboot it (60% chance to fix, otherwise damage)',ev_fault_b:'Switch to the backup (safe, small damage)',
+ev_corr_t:'Course correction',ev_corr_x:'Small errors grow over millions of kilometers.',ev_corr_a:'Fire thrusters now (better accuracy)',ev_corr_b:'Skip it and save fuel',
+ev_dust_t:'Dust storm at Mars',ev_dust_x:'A huge dust cloud covers your target.',ev_dust_a:'Wait 20 days for it to clear',ev_dust_b:'Go now',
+ev_comm_t:'Antenna problem',ev_comm_x:'The main antenna drifted off Earth.',ev_comm_a:'Re-point it with thrusters (uses fuel)',ev_comm_b:'Use the weak backup antenna (less data)',
+ev_power_t:'Power dip',ev_power_x:'Your ship has very little spare power, and a panel is underperforming.',ev_power_a:'Switch off instruments for a while (less science)',ev_power_b:'Keep everything on (risk of damage)',
+ev_med_t:'Sick astronaut',ev_med_x:'One crew member has a fever.',ev_med_a:'Rest and treat them (costs 3 days of supplies)',ev_med_b:'Keep working and hope it passes',
+ev_site_t:'Choose a landing site',ev_site_x:'Mars is right below you. Where should you land?',ev_site_a:'Flat, safe plain (easier landing, less science)',ev_site_b:'Ancient river delta (harder landing, more science)',
+ev_orb_t:'Choose your orbit',ev_orb_x:'Your ship is about to brake into orbit.',ev_orb_a:'Low orbit over the poles (sharper images, harder to enter)',ev_orb_b:'High, wide orbit (easier, less detail)',
+l_launch:'Launch successful. The trip will take about {d} days.',
+l_storm:'Day {day}: Solar storm. Health -{h}, radiation +{r} mSv.',
+l_storm_s:'Day {day}: Solar storm. You sheltered. Health -{h}, radiation +{r} mSv.',
+l_fault_ok:'Day {day}: Reboot worked. No damage.',
+l_fault_bad:'Day {day}: Reboot failed. Health -{h}.',
+l_fault_bk:'Day {day}: Backup computer online. Health -{h}.',
+l_debris:'Day {day}: Space debris hit the hull. Health -{h}.',
+l_burn:'Day {day}: Course corrected. Arrival accuracy improved.',
+l_skip:'Day {day}: Correction skipped. Arrival risk is higher.',
+l_wait:'Waited 20 days for the dust to clear.',
+l_go:'Went ahead through the dust.',
+l_arrive:'Day {day}: Arrived at Mars.',
+l_comm_a:'Day {day}: Antenna re-pointed. Arrival accuracy slightly lower.',
+l_comm_b:'Day {day}: Using the backup antenna. Less data will reach Earth.',
+l_power_a:'Day {day}: Instruments paused. Science will be lower.',
+l_power_b:'Day {day}: Overloaded the system. Health -{h}.',
+l_med_a:'Day {day}: Crew member treated and recovered.',
+l_med_ok:'Day {day}: The fever passed on its own.',
+l_med_bad:'Day {day}: The illness slowed the crew. Science will be lower.',
+l_site_a:'Chose a flat, safe landing plain.',l_site_b:'Chose the ancient river delta.',
+l_orb_a:'Chose a low polar orbit.',l_orb_b:'Chose a high, wide orbit.',
+r_ok:'Mission success',
+r_ok_orbiter:'Your orbiter reached Mars and is sending data home.',
+r_ok_rover:'Your rover landed and started exploring.',
+r_ok_crew:'Your crew landed safely on Mars.',
+r_launch:'Launch failure',r_launch_x:'The rocket failed during launch. Every rocket has a reliability rating, and bigger budgets buy more reliable rockets.',
+r_systems:'Systems failed',r_systems_x:'Damage added up until the ship stopped working. Better shielding and careful choices protect it.',
+r_supplies:'Supplies ran out',r_supplies_x:'The crew needed more days of life support than the trip allowed. Launching near the window center shortens the trip.',
+r_radiation:'Radiation limit exceeded',r_radiation_x:'The crew absorbed more radiation than safety rules allow. A heavier shield or a shorter trip lowers the dose.',
+r_land:'Landing failed',r_land_x:'Mars has a thin atmosphere: too thin to slow a heavy ship by itself, yet thick enough to burn it up. Landing is the hardest step.',
+r_orbit:'Orbit insertion failed',r_orbit_x:'The ship missed its braking burn and flew past Mars.',
+r_odds:'Arrival odds: {n}%',r_health:'Hardware health: {n}%',r_dose:'Radiation: {n} mSv (limit 600)',r_sci:'Science points: {n}',r_score:'Score: {n}',r_cost:'Budget left: {n} $M',
+r_why:'What happened',r_facts:'Good to know',
+fa_window:'Mars missions launch in windows about every 26 months, when Earth and Mars are best placed.',
+fa_delay:'Radio signals take about 3 to 22 minutes to travel one way between Earth and Mars.',
+fa_rad:'An instrument aboard NASA\'s Curiosity measured about 1.8 millisieverts of radiation per day on its way to Mars.',
+fa_land:'NASA\'s Curiosity and Perseverance rovers touched down using a sky crane.',
+fa_jezero:'Perseverance landed in Jezero Crater, a place chosen because it once held a river delta that may have preserved signs of ancient life.',
+fa_dust:'In 2018 a planet-wide dust storm blocked so much sunlight that the solar-powered Opportunity rover stopped responding.',
+btn_start:'Start designing',btn_about:'About and sources',btn_close:'Back',
+intro_h:'Fly a crew or a probe to Mars',
+intro_p:'Every choice has a price. Build the ship, pick the launch date, then survive the trip.',
+intro_1:'Design: choose a rocket, power, instruments, and shielding within a budget.',
+intro_2:'Launch: pick a date. Earth and Mars line up well only about every 26 months.',
+intro_3:'Fly: handle storms, faults, and landing choices as the days pass.',
+intro_4:'Learn: the report explains why your mission worked or failed.',
+intro_sub:'A teaching game about designing and flying space missions.',
+about_h:'About this game',
+about_p:'This is a teaching game, not a flight simulator. The numbers are simplified so the trade-offs are easy to see. The ideas behind them come from real Mars missions.',
+about_real:'What is real',
+ab_1:'Launch windows come about every 26 months, when Earth and Mars are best placed.',
+ab_2:'Radiation in deep space is about 1.8 millisieverts per day, measured by an instrument aboard Curiosity.',
+ab_3:'Radio signals need 3 to 22 minutes to cross between Earth and Mars, one way.',
+ab_4:'Curiosity and Perseverance landed with a sky crane. Mars dust storms can starve solar-powered rovers of sunlight.',
+ab_5:'Jezero Crater, where Perseverance landed, once held a river delta.',
+about_sim:'What is simplified',
+ab_s1:'Costs, masses, and reliabilities are invented for gameplay. They are not NASA figures.',
+ab_s2:'The transfer path is drawn as a simple ellipse, and the crew size is fixed at 4.',
+ab_s3:'Travel time is about 255 days at the window center. Real trips take roughly 6 to 9 months.',
+about_mars:'Mars at a glance',
+mf_1:'Gravity is about 38% of Earth\'s.',
+mf_2:'The average temperature is about -63 °C.',
+mf_3:'Air pressure at the surface is less than 1% of Earth\'s.',
+mf_4:'Mars orbits about 1.52 times farther from the Sun than Earth does.',
+mf_src:'Source: NASA Mars Fact Sheet',
+about_src:'NASA sources',
+about_src_p:'These NASA pages back the facts in this game. Addresses can change, so search the site if a link fails.',
+src:'Source:',
+wx_t:'Mars weather brief',
+wx_dust:'Dust storm at arrival',
+wx_dust_x:'Chance of a dust storm when you reach Mars. Later arrivals fall deeper into the southern spring and summer, when dust storms are most common.',
+wx_solar:'Solar activity on the way',
+wx_lvl_0:'Low',wx_lvl_1:'Moderate',wx_lvl_2:'High',
+wx_solar_x:'Forecast: {lvl}. Forecasts are right about 3 times in 4.',
+wx_tip_shield:'High solar activity is expected. A heavy radiation shield is worth its extra mass.',
+wx_tip_solar:'Dust risk is high. Solar panels may struggle, while nuclear power keeps working.',
+wx_tip_ok:'Conditions look calm for this date.',
+r_wx:'Weather: forecast and result',
+r_wx_solar:'Solar activity: forecast {f}, actual {a}.',
+r_wx_dust_y:'Dust at arrival: forecast chance {n}%. The storm happened.',
+r_wx_dust_n:'Dust at arrival: forecast chance {n}%. No storm happened.',
+r_wx_note:'Forecasts can miss. Good planning covers the worst case, not only the likely one.',
+fa_dustseason:'Dust storms on Mars are most common in the southern hemisphere\'s spring and summer.',
+ab_6:'Dust storms on Mars are most common in the southern hemisphere\'s spring and summer.',
+ab_s4:'The weather brief is a game model: dust chance rises with later arrival, and solar activity forecasts are random.',
+team_role:'Meteorology specialist, Sudan Meteorological Authority',
+about_more:'Learn more',
+about_more_p:'Official pages (addresses can change, so search the site if a link fails):',
+about_ai:'Parts of the code and text were written with help from an AI assistant (Claude, by Anthropic).',
+about_team:'Team: {n}',
+hud_scene:'Scene',hud_alt:'Altitude',hud_trav:'Distance traveled',hud_dist:'Distance to Mars',hud_time:'Time',
+u_km:'km',u_mkm:'million km',
+btn_play:'Play',btn_pause:'Pause',btn_skip:'Skip',btn_restart:'Restart',btn_report:'View report',
+f_delay:'Signal delay: about {m} min one way',gs:'Ground station',
+sc_count_n:'Countdown',sc_count_d:'The rocket carries your spacecraft inside the nose cone. Liftoff is moments away.',
+sc_lift_n:'Liftoff',sc_lift_d:'Engines ignite and the rocket climbs away from the pad.',
+sc_maxq_n:'Max Q',sc_maxq_d:'The rocket faces the strongest air pressure of the whole climb.',
+sc_sep_n:'Stage separation',sc_sep_d:'The empty first stage drops away and the second stage ignites.',
+sc_fair_n:'Fairing release',sc_fair_d:'Above the air, the nose cone splits open and falls away.',
+sc_orbit_n:'Earth orbit',sc_orbit_d:'The ship coasts in a parking orbit while teams check every system.',
+sc_tmi_n:'Leaving Earth',sc_tmi_d:'A long engine burn sends the ship toward Mars.',
+sc_cruise_n:'Cruise to Mars',sc_cruise_d:'Months in deep space. Watch your resources and make the calls.',
+sc_appr_n:'Mars approach',sc_appr_d:'Mars grows larger. The ship lines up for arrival.',
+sc_moi_n:'Orbit insertion',sc_moi_d:'A braking burn lets the gravity of Mars capture the ship.',
+sc_entry_n:'Entry and landing',
+sc_entry_d_chute:'A heat shield, a parachute, and airbags slow the ship in about seven minutes.',
+sc_entry_d_crane:'A heat shield, a parachute, then a sky crane lowers the rover on cables.',
+sc_entry_d_powered:'A heat shield, then rocket engines slow the ship for a soft touchdown.',
+sc_touch_n:'Touchdown',sc_touch_d:'The ship settles on the surface of Mars.',
+sc_deploy_n_orbiter:'Science orbit',sc_deploy_d_orbiter:'Solar panels open and the instruments start scanning the surface.',
+sc_deploy_n_rover:'Rover deployed',sc_deploy_d_rover:'Wheels roll and the mast rises. The first drive begins.',
+sc_deploy_n_crew:'First steps',sc_deploy_d_crew:'The crew opens the hatch and steps onto Mars.',
+sc_done_n:'Mission complete',sc_done_d:'Data is flowing home. See how you did.',
+intro_time:'A full mission takes about 10 minutes. Use Skip or a higher speed to go faster.',
+btn_install:'Install the app',
+sc_boom_n:'Anomaly',sc_boom_d:'Something went wrong during the climb.',sc_crash_d:'The landing went wrong.',
+earth:'Earth',mars:'Mars'
+},
+ar:{
+title:'مصمم رحلة المريخ',
+tag:'صمّم بعثتك، واختر موعد الإطلاق، ثم أطلقها نحو المريخ.',
+langbtn:'English',
+s_design:'التصميم',s_window:'الموعد',s_flight:'الرحلة',s_report:'التقرير',
+g_mission:'نوع البعثة',g_launcher:'الصاروخ',g_power:'الطاقة',g_comms:'الهوائي',g_instr:'الأجهزة العلمية',g_shield:'الحماية من الإشعاع',g_entry:'نظام الهبوط',g_ls:'دعم الحياة',
+h_launcher:'السفن الأثقل تحتاج صواريخ أكبر. راقب مقياس الكتلة.',
+h_power:'ضوء الشمس ضعيف عند المريخ. الطاقة النووية أغلى لكنها لا تتأثر بالغبار.',
+h_comms:'هوائي أفضل يعني بيانات علمية أكثر تصل إلى الأرض.',
+h_instr:'كل جهاز يضيف نقاطاً علمية، ويزيد الكتلة والطاقة والتكلفة.',
+h_shield:'الدرع يحجب الإشعاع لكنه يزيد الكتلة.',
+h_entry:'الهبوط أخطر مرحلة. الأنظمة الأكثر أماناً أثقل وأغلى.',
+h_ls:'يجب أن تكفي الإمدادات الرحلة كلها.',
+crew_note:'الطاقم: 4 رواد فضاء.',
+m_budget:'الميزانية',m_mass:'الكتلة',m_power:'الطاقة',
+u_kg:'كغ',u_w:'واط',u_m:'م$',u_days:'يوم',u_msv:'ملي سيفرت',
+e_budget:'تجاوزت الميزانية بمقدار {n} م$.',
+e_mass:'الكتلة أكبر من قدرة الصاروخ بمقدار {n} كغ.',
+e_power:'تحتاج {n} واط إضافية من الطاقة.',
+btn_next:'اختر موعد الإطلاق',btn_back:'العودة إلى التصميم',btn_launch:'أطلق',btn_redesign:'عدّل التصميم',btn_new:'بعثة جديدة',btn_speed:'السرعة ×{n}',
+st_cap:'يحمل {n} كغ',st_rel:'موثوقية {n}%',st_w:'{n} واط',st_sci:'العلم ×{n}',st_pts:'{n} نقطة علمية',st_block:'يحجب {n}% من الإشعاع',st_safe:'نجاح الهبوط {n}%',st_days:'يكفي {n} يوماً',st_mass:'{n} كغ',st_cost:'{n} م$',st_out:'يولّد {n} واط',st_use:'يستهلك {n} واط',
+w_title:'نافذة الإطلاق',
+w_text:'تقترب الأرض من المريخ بشكل مناسب كل 26 شهراً تقريباً. الإطلاق في منتصف النافذة يسمح بحمل كتلة أكبر ووصول أسرع.',
+w_date:'موعد الإطلاق',w_center:'منتصف النافذة',w_early:'{n} شهر قبل المنتصف',w_late:'{n} شهر بعد المنتصف',
+w_travel:'مدة الرحلة',w_cap:'قدرة الصاروخ في هذا الموعد',w_mass:'كتلة مركبتك',w_days:'{n} يوماً',
+w_ls_warn:'دعم الحياة يكفي {a} يوماً، لكن الرحلة تستغرق {b} يوماً.',
+f_day:'اليوم {d} من {t}',f_launching:'جارٍ الإطلاق…',f_dayl:'اليوم',f_of:'من {t} يوماً',f_health:'سلامة الأجهزة',f_rad:'جرعة الإشعاع',f_sup:'الإمدادات المتبقية',f_log:'سجل البعثة',
+ev_storm_t:'عاصفة شمسية',ev_storm_x:'دفعة من الجسيمات السريعة تتجه نحو مركبتك.',ev_storm_a:'احتمِ وأوقف العمل (يكلّف إمداد يومين)',ev_storm_b:'واصل العمل',
+ev_fault_t:'عطل في النظام',ev_fault_x:'الحاسوب الرئيسي يعيد التشغيل باستمرار.',ev_fault_a:'أعد تشغيله (احتمال الإصلاح 60%، وإلا يحدث ضرر)',ev_fault_b:'انتقل إلى الاحتياطي (آمن، ضرر صغير)',
+ev_corr_t:'تصحيح المسار',ev_corr_x:'الأخطاء الصغيرة تكبر عبر ملايين الكيلومترات.',ev_corr_a:'شغّل المحركات الآن (دقة أفضل)',ev_corr_b:'تجاهل ووفّر الوقود',
+ev_dust_t:'عاصفة ترابية على المريخ',ev_dust_x:'سحابة غبار ضخمة تغطي هدفك.',ev_dust_a:'انتظر 20 يوماً حتى تنجلي',ev_dust_b:'تابع الآن',
+ev_comm_t:'مشكلة في الهوائي',ev_comm_x:'انحرف الهوائي الرئيسي عن اتجاه الأرض.',ev_comm_a:'أعد توجيهه بالمحركات (يستهلك وقوداً)',ev_comm_b:'استخدم الهوائي الاحتياطي الضعيف (بيانات أقل)',
+ev_power_t:'انخفاض في الطاقة',ev_power_x:'مركبتك لا تملك فائضاً كافياً من الطاقة، وأحد الألواح يعمل بكفاءة أقل.',ev_power_a:'أوقف الأجهزة لفترة (علم أقل)',ev_power_b:'أبقِ كل شيء يعمل (خطر الضرر)',
+ev_med_t:'رائد فضاء مريض',ev_med_x:'أحد أفراد الطاقم لديه حمّى.',ev_med_a:'أرِحه وعالجه (يكلّف إمداد 3 أيام)',ev_med_b:'واصل العمل وانتظر أن تزول',
+ev_site_t:'اختر موقع الهبوط',ev_site_x:'المريخ أمامك مباشرة. أين تهبط؟',ev_site_a:'سهل مستوٍ وآمن (هبوط أسهل، علم أقل)',ev_site_b:'دلتا نهر قديم (هبوط أصعب، علم أكثر)',
+ev_orb_t:'اختر مدارك',ev_orb_x:'مركبتك على وشك الكبح للدخول في المدار.',ev_orb_a:'مدار منخفض فوق القطبين (صور أوضح، دخول أصعب)',ev_orb_b:'مدار عالٍ واسع (أسهل، تفاصيل أقل)',
+l_launch:'نجح الإطلاق. ستستغرق الرحلة نحو {d} يوماً.',
+l_storm:'اليوم {day}: عاصفة شمسية. السلامة -{h}، الإشعاع +{r} ملي سيفرت.',
+l_storm_s:'اليوم {day}: عاصفة شمسية. احتميت. السلامة -{h}، الإشعاع +{r} ملي سيفرت.',
+l_fault_ok:'اليوم {day}: نجحت إعادة التشغيل دون ضرر.',
+l_fault_bad:'اليوم {day}: فشلت إعادة التشغيل. السلامة -{h}.',
+l_fault_bk:'اليوم {day}: عمل الحاسوب الاحتياطي. السلامة -{h}.',
+l_debris:'اليوم {day}: اصطدم حطام فضائي بالهيكل. السلامة -{h}.',
+l_burn:'اليوم {day}: تم تصحيح المسار. تحسنت دقة الوصول.',
+l_skip:'اليوم {day}: تم تجاهل التصحيح. خطر الوصول أعلى.',
+l_wait:'انتظرت 20 يوماً حتى انجلى الغبار.',
+l_go:'تابعت رغم الغبار.',
+l_arrive:'اليوم {day}: وصلت إلى المريخ.',
+l_comm_a:'اليوم {day}: أُعيد توجيه الهوائي. انخفضت دقة الوصول قليلاً.',
+l_comm_b:'اليوم {day}: يعمل الهوائي الاحتياطي. ستصل بيانات أقل إلى الأرض.',
+l_power_a:'اليوم {day}: أُوقفت الأجهزة. سيكون العلم أقل.',
+l_power_b:'اليوم {day}: حُمّل النظام فوق طاقته. السلامة -{h}.',
+l_med_a:'اليوم {day}: عولج رائد الفضاء وتعافى.',
+l_med_ok:'اليوم {day}: زالت الحمّى من تلقاء نفسها.',
+l_med_bad:'اليوم {day}: أبطأ المرض عمل الطاقم. سيكون العلم أقل.',
+l_site_a:'اخترت سهلاً مستوياً وآمناً للهبوط.',l_site_b:'اخترت دلتا النهر القديم.',
+l_orb_a:'اخترت مداراً منخفضاً فوق القطبين.',l_orb_b:'اخترت مداراً عالياً واسعاً.',
+r_ok:'نجحت البعثة',
+r_ok_orbiter:'وصلت مركبتك المدارية إلى المريخ وبدأت ترسل البيانات إلى الأرض.',
+r_ok_rover:'هبطت مركبتك الجوّالة وبدأت الاستكشاف.',
+r_ok_crew:'هبط طاقمك بسلام على المريخ.',
+r_launch:'فشل الإطلاق',r_launch_x:'فشل الصاروخ أثناء الإطلاق. لكل صاروخ نسبة موثوقية، والميزانية الأكبر تشتري صاروخاً أكثر موثوقية.',
+r_systems:'تعطّلت الأنظمة',r_systems_x:'تراكم الضرر حتى توقفت المركبة. الدرع الأفضل والقرارات الحذرة تحميها.',
+r_supplies:'نفدت الإمدادات',r_supplies_x:'احتاج الطاقم أياماً أكثر مما يكفيه دعم الحياة. الإطلاق قرب منتصف النافذة يقصّر الرحلة.',
+r_radiation:'تجاوز حد الإشعاع',r_radiation_x:'امتص الطاقم إشعاعاً أكثر مما تسمح به قواعد السلامة. درع أثقل أو رحلة أقصر يقللان الجرعة.',
+r_land:'فشل الهبوط',r_land_x:'غلاف المريخ الجوي رقيق: لا يكفي لإبطاء مركبة ثقيلة وحده، لكنه كثيف بما يكفي لإحراقها. الهبوط أصعب مرحلة.',
+r_orbit:'فشل الدخول في المدار',r_orbit_x:'فاتت المركبة مناورة الكبح ومرّت بالمريخ.',
+r_odds:'فرصة الوصول: {n}%',r_health:'سلامة الأجهزة: {n}%',r_dose:'الإشعاع: {n} ملي سيفرت (الحد 600)',r_sci:'النقاط العلمية: {n}',r_score:'النتيجة: {n}',r_cost:'المتبقي من الميزانية: {n} م$',
+r_why:'ماذا حدث',r_facts:'معلومات مفيدة',
+fa_window:'تنطلق بعثات المريخ في نوافذ كل 26 شهراً تقريباً، حين يكون وضع الأرض والمريخ مناسباً.',
+fa_delay:'تحتاج الإشارات الراديوية من 3 إلى 22 دقيقة تقريباً للانتقال في اتجاه واحد بين الأرض والمريخ.',
+fa_rad:'قاس جهاز على متن المركبة كيوريوسيتي التابعة لناسا نحو 1.8 ملي سيفرت يومياً أثناء رحلتها إلى المريخ.',
+fa_land:'هبطت المركبتان كيوريوسيتي وبيرسيفرنس التابعتان لناسا باستخدام رافعة سماوية.',
+fa_jezero:'هبطت بيرسيفرنس في فوهة جيزيرو، وهي موقع اختير لأنه احتوى قديماً على دلتا نهر قد تحفظ آثاراً لحياة قديمة.',
+fa_dust:'في عام 2018 حجبت عاصفة ترابية عالمية كثيراً من ضوء الشمس، فتوقفت المركبة أوبورتيونيتي العاملة بالطاقة الشمسية عن الاستجابة.',
+btn_start:'ابدأ التصميم',btn_about:'حول اللعبة والمصادر',btn_close:'رجوع',
+intro_h:'أرسل مركبة أو طاقماً إلى المريخ',
+intro_p:'لكل قرار ثمن. ابنِ المركبة، واختر موعد الإطلاق، ثم انجُ برحلتك.',
+intro_1:'صمّم: اختر الصاروخ والطاقة والأجهزة والحماية ضمن ميزانية محدودة.',
+intro_2:'أطلق: اختر الموعد. الأرض والمريخ تتقاربان بشكل مناسب كل 26 شهراً تقريباً.',
+intro_3:'حلّق: تعامل مع العواصف والأعطال وقرارات الهبوط مع مرور الأيام.',
+intro_4:'تعلّم: يشرح التقرير سبب نجاح بعثتك أو فشلها.',
+intro_sub:'لعبة تعليمية عن تصميم بعثات الفضاء وقيادتها.',
+about_h:'حول اللعبة',
+about_p:'هذه لعبة تعليمية وليست محاكياً للطيران. الأرقام مبسطة لتظهر المفاضلات بوضوح، أما الأفكار خلفها فمأخوذة من بعثات المريخ الحقيقية.',
+about_real:'ما هو حقيقي',
+ab_1:'نوافذ الإطلاق تتكرر كل 26 شهراً تقريباً حين يكون وضع الأرض والمريخ مناسباً.',
+ab_2:'الإشعاع في الفضاء العميق نحو 1.8 ملي سيفرت يومياً، قاسه جهاز على متن كيوريوسيتي.',
+ab_3:'تحتاج الإشارات الراديوية من 3 إلى 22 دقيقة للانتقال بين الأرض والمريخ في اتجاه واحد.',
+ab_4:'هبطت كيوريوسيتي وبيرسيفرنس باستخدام رافعة سماوية. والعواصف الترابية على المريخ قد تحرم المركبات الشمسية من ضوء الشمس.',
+ab_5:'فوهة جيزيرو، حيث هبطت بيرسيفرنس، احتوت قديماً على دلتا نهر.',
+about_sim:'ما هو مبسّط',
+ab_s1:'التكاليف والكتل ونسب الموثوقية مختلقة لأغراض اللعب، وليست أرقام ناسا.',
+ab_s2:'مسار الانتقال مرسوم كقطع ناقص مبسط، وعدد الطاقم ثابت (4).',
+ab_s3:'مدة الرحلة نحو 255 يوماً في منتصف النافذة. الرحلات الحقيقية تستغرق نحو 6 إلى 9 أشهر.',
+about_mars:'المريخ بنظرة سريعة',
+mf_1:'الجاذبية نحو 38% من جاذبية الأرض.',
+mf_2:'متوسط درجة الحرارة نحو -63 درجة مئوية.',
+mf_3:'ضغط الهواء عند السطح أقل من 1% من ضغط الأرض.',
+mf_4:'يدور المريخ على بعد يقارب 1.52 ضعف بعد الأرض عن الشمس.',
+mf_src:'المصدر: صحيفة حقائق المريخ من ناسا',
+about_src:'مصادر ناسا',
+about_src_p:'هذه صفحات ناسا التي تدعم المعلومات في اللعبة. قد تتغير العناوين، فابحث في الموقع إن لم يعمل الرابط.',
+src:'المصدر:',
+wx_t:'نشرة طقس المريخ',
+wx_dust:'عاصفة ترابية عند الوصول',
+wx_dust_x:'احتمال عاصفة ترابية عند وصولك إلى المريخ. الوصول المتأخر يقع أعمق في ربيع الجنوب وصيفه، حين تكثر العواصف الترابية.',
+wx_solar:'النشاط الشمسي في الطريق',
+wx_lvl_0:'منخفض',wx_lvl_1:'متوسط',wx_lvl_2:'مرتفع',
+wx_solar_x:'التوقع: {lvl}. تصيب التوقعات نحو 3 مرات من كل 4.',
+wx_tip_shield:'يُتوقع نشاط شمسي مرتفع. الدرع الثقيل يستحق كتلته الإضافية.',
+wx_tip_solar:'خطر الغبار مرتفع. قد تعاني الألواح الشمسية بينما تستمر الطاقة النووية في العمل.',
+wx_tip_ok:'الأجواء تبدو هادئة في هذا الموعد.',
+r_wx:'الطقس: التوقع والنتيجة',
+r_wx_solar:'النشاط الشمسي: التوقع {f}، الفعلي {a}.',
+r_wx_dust_y:'الغبار عند الوصول: احتمال متوقع {n}%. وقعت العاصفة.',
+r_wx_dust_n:'الغبار عند الوصول: احتمال متوقع {n}%. لم تقع عاصفة.',
+r_wx_note:'قد تخطئ التوقعات. التخطيط الجيد يغطي أسوأ الاحتمالات لا المرجّح فقط.',
+fa_dustseason:'تكثر العواصف الترابية على المريخ في ربيع نصف الكرة الجنوبي وصيفه.',
+ab_6:'تكثر العواصف الترابية على المريخ في ربيع نصف الكرة الجنوبي وصيفه.',
+ab_s4:'نشرة الطقس نموذج للعبة: يزداد احتمال الغبار مع تأخر الوصول، وتوقعات النشاط الشمسي عشوائية.',
+team_role:'أخصائي أرصاد جوية، الهيئة العامة للأرصاد الجوية السودانية',
+about_more:'للمزيد',
+about_more_p:'صفحات رسمية (قد تتغير العناوين، فابحث في الموقع إن لم يعمل الرابط):',
+about_ai:'كُتبت أجزاء من الكود والنصوص بمساعدة مساعد ذكاء اصطناعي (Claude من Anthropic).',
+about_team:'الفريق: {n}',
+hud_scene:'المشهد',hud_alt:'الارتفاع',hud_trav:'المسافة المقطوعة',hud_dist:'المسافة إلى المريخ',hud_time:'الزمن',
+u_km:'كم',u_mkm:'مليون كم',
+btn_play:'تشغيل',btn_pause:'إيقاف',btn_skip:'تخطي',btn_restart:'إعادة',btn_report:'عرض التقرير',
+f_delay:'تأخر الإشارة نحو {m} دقيقة في اتجاه واحد',gs:'محطة أرضية',
+sc_count_n:'العد التنازلي',sc_count_d:'يحمل الصاروخ مركبتك داخل الغطاء الأمامي. الإطلاق على وشك البدء.',
+sc_lift_n:'الإقلاع',sc_lift_d:'تشتعل المحركات ويصعد الصاروخ بعيداً عن المنصة.',
+sc_maxq_n:'أقصى ضغط ديناميكي',sc_maxq_d:'يواجه الصاروخ أشد ضغط هواء في رحلة الصعود.',
+sc_sep_n:'انفصال المرحلة',sc_sep_d:'تنفصل المرحلة الأولى الفارغة وتشتعل المرحلة الثانية.',
+sc_fair_n:'انفصال الغطاء',sc_fair_d:'فوق الغلاف الجوي ينفتح الغطاء الأمامي ويسقط بعيداً.',
+sc_orbit_n:'مدار الأرض',sc_orbit_d:'تسير المركبة في مدار انتظار بينما يفحص الفريق كل الأنظمة.',
+sc_tmi_n:'مغادرة الأرض',sc_tmi_d:'إشعال طويل للمحرك يدفع المركبة نحو المريخ.',
+sc_cruise_n:'الرحلة إلى المريخ',sc_cruise_d:'أشهر في الفضاء العميق. راقب مواردك واتخذ القرارات.',
+sc_appr_n:'الاقتراب من المريخ',sc_appr_d:'يكبر المريخ في الأفق وتستعد المركبة للوصول.',
+sc_moi_n:'الدخول في المدار',sc_moi_d:'إشعال كابح يسمح لجاذبية المريخ بأسر المركبة.',
+sc_entry_n:'الدخول والهبوط',
+sc_entry_d_chute:'درع حراري ومظلة ووسائد هوائية تبطئ المركبة خلال نحو سبع دقائق.',
+sc_entry_d_crane:'درع حراري ومظلة ثم رافعة سماوية تُنزل المركبة الجوّالة بالكابلات.',
+sc_entry_d_powered:'درع حراري ثم محركات صاروخية تبطئ المركبة لهبوط ناعم.',
+sc_touch_n:'الهبوط على السطح',sc_touch_d:'تستقر المركبة على سطح المريخ.',
+sc_deploy_n_orbiter:'مدار العلوم',sc_deploy_d_orbiter:'تنفتح الألواح الشمسية وتبدأ الأجهزة بمسح السطح.',
+sc_deploy_n_rover:'نشر المركبة الجوّالة',sc_deploy_d_rover:'تدور العجلات ويرتفع الصاري. تبدأ أول جولة.',
+sc_deploy_n_crew:'الخطوات الأولى',sc_deploy_d_crew:'يفتح الطاقم الباب ويخطو على المريخ.',
+sc_done_n:'اكتملت المهمة',sc_done_d:'تتدفق البيانات إلى الأرض. اطّلع على نتيجتك.',
+intro_time:'تستغرق البعثة الكاملة نحو 10 دقائق. استخدم زر التخطي أو سرعة أعلى لتختصر الوقت.',
+btn_install:'ثبّت التطبيق',
+sc_boom_n:'عطل',sc_boom_d:'حدث خلل أثناء الصعود.',sc_crash_d:'فشل الهبوط.',
+earth:'الأرض',mars:'المريخ'
+}};
+
+/* ---------- Game data ---------- */
+const MISSIONS=[
+ {id:'orbiter',n:{en:'Orbiter',ar:'مركبة مدارية'},d:{en:'Circles Mars and maps it from above.',ar:'تدور حول المريخ وتصوّره من الأعلى.'},bus:900,cost:200,load:300,budget:800,lands:false,crew:false,
+  def:{launcher:'small',power:'sol_s',comms:'dish_s',entry:null,shield:'none',ls:null,instr:['camera']}},
+ {id:'rover',n:{en:'Rover',ar:'مركبة جوّالة'},d:{en:'Lands and explores the surface.',ar:'تهبط وتستكشف السطح.'},bus:1100,cost:300,load:350,budget:1500,lands:true,crew:false,
+  def:{launcher:'medium',power:'sol_l',comms:'dish_s',entry:'crane',shield:'none',ls:null,instr:['camera','spec']}},
+ {id:'crew',n:{en:'Crewed mission',ar:'رحلة بشرية'},d:{en:'Four astronauts travel to Mars and land.',ar:'أربعة رواد يسافرون إلى المريخ ويهبطون.'},bus:7000,cost:2200,load:3000,budget:6000,lands:true,crew:true,
+  def:{launcher:'heavy',power:'sol_xl',comms:'dish_l',entry:'powered',shield:'light',ls:'basic',instr:[]}}
+];
+const LAUNCHERS=[
+ {id:'small',n:{en:'Small rocket',ar:'صاروخ صغير'},d:{en:'Cheap, fits light probes.',ar:'رخيص ويناسب المسابير الخفيفة.'},cap:2500,cost:90,rel:.90,mass:0},
+ {id:'medium',n:{en:'Medium rocket',ar:'صاروخ متوسط'},d:{en:'A good middle choice.',ar:'خيار وسط جيد.'},cap:7000,cost:250,rel:.94,mass:0},
+ {id:'heavy',n:{en:'Heavy rocket',ar:'صاروخ ثقيل'},d:{en:'Needed for crewed ships.',ar:'ضروري للمركبات البشرية.'},cap:26000,cost:700,rel:.96,mass:0}
+];
+const POWER=[
+ {id:'sol_s',n:{en:'Small solar panels',ar:'ألواح شمسية صغيرة'},d:{en:'Weaken in dust storms.',ar:'تضعف في العواصف الترابية.'},mass:100,cost:30,out:500,solar:true},
+ {id:'sol_l',n:{en:'Large solar panels',ar:'ألواح شمسية كبيرة'},d:{en:'Weaken in dust storms.',ar:'تضعف في العواصف الترابية.'},mass:300,cost:70,out:1500,solar:true},
+ {id:'sol_xl',n:{en:'Giant solar arrays',ar:'حقول ألواح شمسية ضخمة'},d:{en:'Weaken in dust storms.',ar:'تضعف في العواصف الترابية.'},mass:900,cost:180,out:3500,solar:true},
+ {id:'nuc',n:{en:'Nuclear power',ar:'طاقة نووية'},d:{en:'Steady in dust storms and darkness.',ar:'مستقرة في العواصف الترابية والظلام.'},mass:1500,cost:400,out:5000,solar:false}
+];
+const COMMS=[
+ {id:'dish_s',n:{en:'Small antenna',ar:'هوائي صغير'},mass:40,cost:20,load:60,f:.7},
+ {id:'dish_l',n:{en:'Large antenna',ar:'هوائي كبير'},mass:120,cost:60,load:150,f:1.0},
+ {id:'laser',n:{en:'Laser communication',ar:'اتصال بالليزر'},d:{en:'Fast but expensive.',ar:'سريع لكنه مكلف.'},mass:80,cost:150,load:200,f:1.3}
+];
+const INSTR=[
+ {id:'camera',n:{en:'Camera',ar:'كاميرا'},d:{en:'Photographs the surface.',ar:'تلتقط صوراً للسطح.'},mass:60,cost:40,load:40,pts:20},
+ {id:'spec',n:{en:'Spectrometer',ar:'مطياف'},d:{en:'Reads what rocks are made of.',ar:'يحدد مكونات الصخور.'},mass:120,cost:90,load:90,pts:35},
+ {id:'drill',n:{en:'Drill',ar:'مثقاب'},d:{en:'Samples rock below the surface. Landers only.',ar:'يأخذ عينات من تحت السطح. للمركبات الهابطة فقط.'},mass:220,cost:130,load:200,pts:45,landOnly:true},
+ {id:'radar',n:{en:'Ice radar',ar:'رادار الجليد'},d:{en:'Looks for ice underground.',ar:'يبحث عن الجليد تحت الأرض.'},mass:180,cost:110,load:150,pts:40},
+ {id:'weather',n:{en:'Weather station',ar:'محطة طقس'},d:{en:'Measures wind and temperature.',ar:'يقيس الرياح ودرجة الحرارة.'},mass:15,cost:20,load:10,pts:10}
+];
+const SHIELD=[
+ {id:'none',n:{en:'No shield',ar:'بلا درع'},mass:0,cost:0,red:0},
+ {id:'light',n:{en:'Light shield',ar:'درع خفيف'},mass:150,cost:20,red:.25},
+ {id:'heavy',n:{en:'Heavy shield',ar:'درع ثقيل'},mass:400,cost:60,red:.45}
+];
+const ENTRY=[
+ {id:'chute',n:{en:'Parachute and airbags',ar:'مظلة ووسائد هوائية'},d:{en:'Cheap and light. Not safe enough for people.',ar:'رخيصة وخفيفة. غير آمنة بما يكفي للبشر.'},mass:250,cost:40,rel:.72,noCrew:true},
+ {id:'crane',n:{en:'Sky crane',ar:'رافعة سماوية'},d:{en:'Lowers the ship on cables.',ar:'تُنزل المركبة بالكابلات.'},mass:600,cost:120,rel:.90},
+ {id:'powered',n:{en:'Rocket landing',ar:'هبوط بالمحركات'},d:{en:'Engines slow the ship to a soft touchdown.',ar:'محركات تبطئ المركبة لهبوط ناعم.'},mass:900,cost:220,rel:.95}
+];
+const LS=[
+ {id:'basic',n:{en:'Basic life support',ar:'دعم حياة أساسي'},mass:2600,cost:250,days:300},
+ {id:'adv',n:{en:'Advanced recycling',ar:'إعادة تدوير متقدمة'},mass:4500,cost:450,days:500}
+];
+
+/* ---------- State and helpers ---------- */
+const TEAM_NAME='Elnzer Eshak Haroon Abdo';
+const S={played:false,lang:'en',prev:'design',phase:'intro',mission:'orbiter',sel:null,offset:0,speed:1,fl:null,res:null,timer:null};
+const fmt=n=>Math.round(n).toLocaleString('en-US');
+const find=(a,id)=>a.find(x=>x.id===id);
+const t=(k,p)=>{let s=L[S.lang][k]!==undefined?L[S.lang][k]:(L.en[k]!==undefined?L.en[k]:k);
+  if(p)for(const x in p)s=s.split('{'+x+'}').join(p[x]);return s;};
+const nm=o=>o.n[S.lang];
+const ds=o=>o.d?o.d[S.lang]:'';
+const travelDays=off=>Math.round(255+14*Math.abs(off));
+const capFactor=off=>1-0.30*Math.pow(off/6,2);
+
+const dustRisk=off=>0.10+0.03*(off+6);
+function newWx(){
+  const F=[0,0,0,1,1,1,1,1,2,2][Math.floor(Math.random()*10)];
+  let A=F;
+  if(Math.random()>=0.75)A=F===1?(Math.random()<0.5?0:2):1;
+  S.wx={F,A};
+}
+function setMission(id){
+  S.mission=id;
+  const d=find(MISSIONS,id).def;
+  S.sel={launcher:d.launcher,power:d.power,comms:d.comms,entry:d.entry,shield:d.shield,ls:d.ls,instr:d.instr.slice()};
+}
+setMission('orbiter');newWx();
+
+function calc(){
+  const m=find(MISSIONS,S.mission),c=m.crew;
+  const La=find(LAUNCHERS,S.sel.launcher),P=find(POWER,S.sel.power),C=find(COMMS,S.sel.comms),sh=find(SHIELD,S.sel.shield);
+  let mass=m.bus+P.mass+C.mass+sh.mass*(c?7:1);
+  let cost=m.cost+La.cost+P.cost+C.cost+sh.cost*(c?5:1);
+  let load=m.load+C.load;
+  let pts=0;
+  S.sel.instr.forEach(id=>{const i=find(INSTR,id);mass+=i.mass;cost+=i.cost;load+=i.load;pts+=i.pts;});
+  let en=null,ls=null;
+  if(m.lands){en=find(ENTRY,S.sel.entry);mass+=en.mass*(c?8:1);cost+=en.cost*(c?4:1);}
+  if(c){ls=find(LS,S.sel.ls);mass+=ls.mass;cost+=ls.cost;}
+  return {m,La,P,C,sh,en,ls,mass,cost,load,pts};
+}
+function errors(c,cf){
+  const e=[];
+  if(c.cost>c.m.budget)e.push(t('e_budget',{n:fmt(c.cost-c.m.budget)}));
+  const cap=c.La.cap*cf;
+  if(c.mass>cap)e.push(t('e_mass',{n:fmt(c.mass-cap)}));
+  if(c.P.out<c.load)e.push(t('e_power',{n:fmt(c.load-c.P.out)}));
+  return e;
+}
+
+/* ---------- Orbit diagram ---------- */
+const STARS=(()=>{let seed=7,o='';const r=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  for(let i=0;i<46;i++){const x=r()*320,y=r()*240,z=r();o+=`<circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="${(0.4+z*0.9).toFixed(1)}" fill="#fff" opacity="${(0.25+r()*0.6).toFixed(2)}"/>`;}
+  return o;})();
+function orbit(p,hud,state){
+  const cx=160,cy=122,a=78,e=0.2051;
+  const pos=q=>{
+    const M=q*Math.PI;let E=M;
+    for(let i=0;i<8;i++)E=M+e*Math.sin(E);
+    const th=2*Math.atan2(Math.sqrt(1+e)*Math.sin(E/2),Math.sqrt(1-e)*Math.cos(E/2));
+    const r=a*(1-e*e)/(1+e*Math.cos(th));
+    return [cx+r*Math.cos(th),cy-r*Math.sin(th)];
+  };
+  const path=(from,to)=>{let d='';const n=60;for(let i=0;i<=n;i++){const [x,y]=pos(from+(to-from)*i/n);d+=(i?'L':'M')+x.toFixed(1)+' '+y.toFixed(1);}return d;};
+  const [ex,ey]=pos(0),[mx,my]=pos(1),[sx,sy]=pos(p);
+  const q=Math.min(p,0.99),[x0,y0]=pos(q),[x1,y1]=pos(q+0.01);
+  const ang=(Math.atan2(y1-y0,x1-x0)*180/Math.PI).toFixed(1);
+  let craft='';
+  if(state==='fail'){
+    craft=`<g stroke="#FF8A80" stroke-width="2.2" stroke-linecap="round"><path d="M${sx-5} ${sy-5}L${sx+5} ${sy+5}M${sx+5} ${sy-5}L${sx-5} ${sy+5}"/></g>`;
+  }else if(p>0){
+    craft=`<circle class="pulse" cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="4"/><g transform="translate(${sx.toFixed(1)} ${sy.toFixed(1)}) rotate(${ang}) scale(1.15)"><rect x="-3" y="-10" width="6" height="5" fill="#2F63C8"/><rect x="-3" y="5" width="6" height="5" fill="#2F63C8"/><rect x="-5" y="-3.2" width="9" height="6.4" rx="1" fill="#F1CC62"/><path d="M4 -3.2L8.5 0L4 3.2z" fill="#fff"/></g>`;
+  }
+  return `<div class="space"><svg viewBox="0 0 320 240" role="img" aria-label="${t('earth')} - ${t('mars')}">
+    <defs>
+      <radialGradient id="gSun"><stop offset="0" stop-color="#FFF3B0"/><stop offset=".6" stop-color="#F2B632"/><stop offset="1" stop-color="#E58A00"/></radialGradient>
+      <radialGradient id="gGlow"><stop offset="0" stop-color="#F2B632" stop-opacity=".5"/><stop offset="1" stop-color="#F2B632" stop-opacity="0"/></radialGradient>
+      <radialGradient id="gE" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="#8CC4FF"/><stop offset=".6" stop-color="#2F6FD0"/><stop offset="1" stop-color="#173B7A"/></radialGradient>
+      <radialGradient id="gM" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="#F29A73"/><stop offset=".6" stop-color="#C2502E"/><stop offset="1" stop-color="#6E2814"/></radialGradient>
+    </defs>
+    ${STARS}
+    <circle class="orb" cx="${cx}" cy="${cy}" r="62"/><circle class="orb" cx="${cx}" cy="${cy}" r="94"/>
+    <path class="arc" d="${path(0,1)}"/>
+    ${p>0?`<path class="trail glow" d="${path(0,p)}"/><path class="trail" d="${path(0,p)}"/>`:''}
+    <circle cx="${cx}" cy="${cy}" r="26" fill="url(#gGlow)"/><circle cx="${cx}" cy="${cy}" r="8" fill="url(#gSun)"/>
+    <circle cx="${ex}" cy="${ey}" r="6.5" fill="url(#gE)"/><text x="${ex}" y="${ey+18}" text-anchor="middle">${t('earth')}</text>
+    <circle cx="${mx}" cy="${my}" r="5" fill="url(#gM)"/><text x="${mx}" y="${my+17}" text-anchor="middle">${t('mars')}</text>
+    ${state==='ok'?`<circle cx="${mx}" cy="${my}" r="10" fill="none" stroke="#7BD389" stroke-width="1.6"/>`:''}
+    ${craft}
+  </svg>${hud||''}</div>`;
+}
+
+/* ---------- Icons ---------- */
+const rk=s=>`<g transform="translate(12 12) scale(${s}) translate(-12 -12)"><path d="M12 3c3 2.5 4.5 6 4.5 9.5V16h-9v-3.5C7.5 9 9 5.5 12 3z"/><path d="M7.5 13l-3 3.5V19l3-1.5M16.5 13l3 3.5V19l-3-1.5"/><circle cx="12" cy="10" r="1.6"/><path d="M10.5 19c0 1.5.7 2.5 1.5 3 .8-.5 1.5-1.5 1.5-3"/></g>`;
+const SOLAR='<path d="M4 8h16v9H4z"/><path d="M4 12.5h16M9.3 8v9M14.7 8v9M12 17v3.5M8.5 20.5h7"/>';
+const SHIELDP='<path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"';
+const IC={
+ 'mission:orbiter':'<circle cx="12" cy="12" r="4"/><ellipse cx="12" cy="12" rx="9.5" ry="3.6" transform="rotate(-25 12 12)"/>',
+ 'mission:rover':'<path d="M6 9h12v5H6z"/><path d="M15 9V5l3-1"/><circle cx="7.5" cy="17.5" r="2.3"/><circle cx="12" cy="17.5" r="2.3"/><circle cx="16.5" cy="17.5" r="2.3"/>',
+ 'mission:crew':'<circle cx="12" cy="10" r="6"/><rect x="8.3" y="8.6" width="7.4" height="3.6" rx="1.8"/><path d="M5 21c0-3.5 3-5 7-5s7 1.5 7 5"/>',
+ 'launcher:small':rk(.62),'launcher:medium':rk(.8),'launcher:heavy':rk(1),
+ 'power:sol_s':SOLAR,'power:sol_l':SOLAR,'power:sol_xl':SOLAR,
+ 'power:nuc':'<circle cx="12" cy="12" r="1.5"/><ellipse cx="12" cy="12" rx="9" ry="3.6"/><ellipse cx="12" cy="12" rx="9" ry="3.6" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="9" ry="3.6" transform="rotate(120 12 12)"/>',
+ 'comms:dish_s':'<path d="M7 11c0 3 2.2 5 5 5s5-2 5-5H7z"/><path d="M12 16v4M9 20h6M12 11V6"/>',
+ 'comms:dish_l':'<path d="M6 13c0 3 2.7 5 6 5s6-2 6-5H6z"/><path d="M12 18v3M9 21h6M12 13V8M8.5 6a5 5 0 0 1 7 0"/>',
+ 'comms:laser':'<circle cx="12" cy="12" r="2.2"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/>',
+ 'instr:camera':'<path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.2"/>',
+ 'instr:spec':'<path d="M12 4l7 13H5z"/><path d="M2.5 13H8M16 11l5-2M17 14h4M16.5 17l4.5 2"/>',
+ 'instr:drill':'<path d="M12 3v9M8.5 6h7M9.5 12h5L12 21z"/>',
+ 'instr:radar':'<path d="M4 17a8 8 0 0 1 16 0M8 17a4 4 0 0 1 8 0M12 17l4-7M3 20.5h18"/>',
+ 'instr:weather':'<path d="M10 14.5V5a2 2 0 0 1 4 0v9.5a4 4 0 1 1-4 0z"/><path d="M12 9v7"/>',
+ 'shield:none':SHIELDP+' stroke-dasharray="2 2.5"/>',
+ 'shield:light':SHIELDP+'/><path d="M9 12h6"/>',
+ 'shield:heavy':SHIELDP+'/><path d="M12 8l3 1.3V12c0 1.8-1.2 3.1-3 3.8-1.8-.7-3-2-3-3.8V9.3z"/>',
+ 'entry:chute':'<path d="M4 10c0-4 3.6-7 8-7s8 3 8 7z"/><path d="M4 10l6 8M20 10l-6 8M12 10v8"/><rect x="10" y="18" width="4" height="3"/>',
+ 'entry:crane':'<rect x="8" y="3" width="8" height="4"/><path d="M9 7l-2 7M15 7l2 7M12 7v7M6 14h12v3H6z"/><circle cx="8.5" cy="19.5" r="1.5"/><circle cx="15.5" cy="19.5" r="1.5"/>',
+ 'entry:powered':'<path d="M12 3l4 5v8H8V8z"/><path d="M9 16l-3 4M15 16l3 4M10.5 17c0 1.5.7 2.5 1.5 3 .8-.5 1.5-1.5 1.5-3"/>',
+ 'ls:basic':'<path d="M12 3c4 5 6 7.5 6 10.5a6 6 0 0 1-12 0C6 10.5 8 8 12 3z"/>',
+ 'ls:adv':'<path d="M12 3c4 5 6 7.5 6 10.5a6 6 0 0 1-12 0C6 10.5 8 8 12 3z"/><path d="M9.5 14.5l2 2 3.5-4"/>'
+};
+const ico=k=>`<span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true">${IC[k]||''}</svg></span>`;
+const PATCH=`<svg class="patch" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="22" fill="#0B1430" stroke="#4FC3CC" stroke-width="2"/><circle cx="24" cy="24" r="10" fill="none" stroke="#fff" stroke-opacity=".25"/><circle cx="24" cy="24" r="4" fill="#F2B632"/><path d="M34 24A10 10 0 0 0 24 14" fill="none" stroke="#5ED6DE" stroke-width="2" stroke-linecap="round"/><circle cx="36" cy="13" r="4" fill="#C2502E"/></svg>`;
+
+/* ---------- Shared view parts ---------- */
+function head(){
+  const order=['design','window','flight','report'],cur=order.indexOf(S.phase);
+  const about=(S.phase==='flight'||S.phase==='about')?'':`<button class="mini round" aria-label="${t('btn_about')}" onclick="go('about')">i</button>`;
+  return `<header><div class="brand">${PATCH}<div><h1>${t('title')}</h1><p class="tag">${t('tag')}</p></div></div>
+    <div class="hbtns">${about}<button class="mini" onclick="toggleLang()">${t('langbtn')}</button></div></header>
+    ${cur<0?'':`<div class="steps">${order.map((k,i)=>`<span class="${i<cur?'done':i===cur?'on':''}">${t('s_'+k)}</span>`).join('')}</div>`}`;
+}
+function gauge(label,val,max,txt,mode){
+  // mode 'cap': over max is bad. 'risk': higher ratio is worse. 'life': lower ratio is worse
+  let cls='',pct=0;
+  if(max>0)pct=Math.max(0,Math.min(100,val/max*100));
+  if(mode==='cap'){if(val>max)cls='over';else if(val/max>.85)cls='mid';}
+  if(mode==='risk'){if(pct>85)cls='over';else if(pct>60)cls='mid';}
+  if(mode==='life'){if(pct<15)cls='over';else if(pct<40)cls='mid';}
+  return `<div class="gauge ${cls}"><span>${label}</span><div class="bar"><i style="width:${pct}%"></i></div><b>${txt}</b></div>`;
+}
+function opt(group,o,sel,stats,disabled,multi){
+  return `<button class="opt" role="${multi?'checkbox':'radio'}" aria-checked="${sel}" ${disabled?'disabled':''} onclick="pick('${group}','${o.id}')">
+    ${ico(group+':'+o.id)}
+    <span class="ob"><span class="on">${nm(o)}</span>${ds(o)?`<span class="od">${ds(o)}</span>`:''}
+    <span class="os">${stats.map(x=>`<span>${x}</span>`).join('')}</span></span>
+    <span class="tick ${multi?'sq':''}"></span></button>`;
+}
+const sMass=n=>t('st_mass',{n:fmt(n)});
+const sCost=n=>t('st_cost',{n:fmt(n)});
+
+/* ---------- Design screen ---------- */
+function viewDesign(){
+  const c=calc(),m=c.m,crew=m.crew;
+  const errs=errors(c,1);
+  let h=orbit(0);
+  h+=`<h3>${t('g_mission')}</h3>`;
+  h+=MISSIONS.map(o=>opt('mission',o,S.mission===o.id,[t('st_cost',{n:fmt(o.budget)})+' '+t('m_budget')],false,false)).join('');
+  if(crew)h+=`<p class="hint">${t('crew_note')}</p>`;
+
+  h+=`<h3>${t('g_launcher')}</h3><p class="hint">${t('h_launcher')}</p>`;
+  h+=LAUNCHERS.map(o=>opt('launcher',o,S.sel.launcher===o.id,[t('st_cap',{n:fmt(o.cap)}),t('st_rel',{n:Math.round(o.rel*100)}),sCost(o.cost)],false,false)).join('');
+
+  h+=`<h3>${t('g_power')}</h3><p class="hint">${t('h_power')}</p>`;
+  h+=POWER.map(o=>opt('power',o,S.sel.power===o.id,[t('st_out',{n:fmt(o.out)}),sMass(o.mass),sCost(o.cost)],false,false)).join('');
+
+  h+=`<h3>${t('g_comms')}</h3><p class="hint">${t('h_comms')}</p>`;
+  h+=COMMS.map(o=>opt('comms',o,S.sel.comms===o.id,[t('st_sci',{n:o.f}),t('st_use',{n:o.load}),sMass(o.mass),sCost(o.cost)],false,false)).join('');
+
+  h+=`<h3>${t('g_instr')}</h3><p class="hint">${t('h_instr')}</p>`;
+  h+=INSTR.map(o=>opt('instr',o,S.sel.instr.includes(o.id),[t('st_pts',{n:o.pts}),t('st_use',{n:o.load}),sMass(o.mass),sCost(o.cost)],o.landOnly&&!m.lands,true)).join('');
+
+  h+=`<h3>${t('g_shield')}</h3><p class="hint">${t('h_shield')}</p>`;
+  h+=SHIELD.map(o=>opt('shield',o,S.sel.shield===o.id,[t('st_block',{n:Math.round(o.red*100)}),sMass(o.mass*(crew?7:1)),sCost(o.cost*(crew?5:1))],false,false)).join('');
+
+  if(m.lands){
+    h+=`<h3>${t('g_entry')}</h3><p class="hint">${t('h_entry')}</p>`;
+    h+=ENTRY.map(o=>opt('entry',o,S.sel.entry===o.id,[t('st_safe',{n:Math.round(o.rel*100)}),sMass(o.mass*(crew?8:1)),sCost(o.cost*(crew?4:1))],o.noCrew&&crew,false)).join('');
+  }
+  if(crew){
+    h+=`<h3>${t('g_ls')}</h3><p class="hint">${t('h_ls')}</p>`;
+    h+=LS.map(o=>opt('ls',o,S.sel.ls===o.id,[t('st_days',{n:o.days}),sMass(o.mass),sCost(o.cost)],false,false)).join('');
+  }
+
+  h+=`<div class="dock">
+    ${gauge(t('m_budget')+' ('+t('u_m')+')',c.cost,m.budget,fmt(c.cost)+' / '+fmt(m.budget),'cap')}
+    ${gauge(t('m_mass')+' ('+t('u_kg')+')',c.mass,c.La.cap,fmt(c.mass)+' / '+fmt(c.La.cap),'cap')}
+    ${gauge(t('m_power')+' ('+t('u_w')+')',c.load,c.P.out,fmt(c.load)+' / '+fmt(c.P.out),'cap')}
+    ${errs.map(e=>`<div class="err">${e}</div>`).join('')}
+    <button class="btn primary" onclick="go('window')" ${errs.length?'disabled':''}>${t('btn_next')}</button>
+  </div>`;
+  return h;
+}
+
+/* ---------- Launch window screen ---------- */
+function offLabel(o){return o===0?t('w_center'):(o<0?t('w_early',{n:-o}):t('w_late',{n:o}));}
+function wxCard(c){
+  const risk=dustRisk(S.offset),pct=Math.round(risk*100),F=S.wx.F,tips=[];
+  if(F===2&&c.sh.red<0.45)tips.push(t('wx_tip_shield'));
+  if(risk>0.35&&c.P.solar)tips.push(t('wx_tip_solar'));
+  if(!tips.length)tips.push(t('wx_tip_ok'));
+  return `<div class="wx"><h3>${t('wx_t')}</h3>
+    ${gauge(t('wx_dust'),pct,50,pct+'%','risk')}<p class="hint">${t('wx_dust_x')}</p>
+    ${gauge(t('wx_solar'),F+1,3,t('wx_lvl_'+F),'risk')}<p class="hint">${t('wx_solar_x',{lvl:t('wx_lvl_'+F)})}</p>
+    ${tips.map(x=>`<p class="tip">${x}</p>`).join('')}</div>`;
+}
+function winDyn(){
+  const c=calc(),cf=capFactor(S.offset),cap=c.La.cap*cf,days=travelDays(S.offset),errs=errors(c,cf);
+  const warns=[];
+  if(c.m.crew&&c.ls&&days>c.ls.days)warns.push(t('w_ls_warn',{a:c.ls.days,b:days}));
+  return `${wxCard(c)}<div>
+    <div class="row"><span>${t('w_travel')}</span><b>${t('w_days',{n:days})}</b></div>
+    <div class="row"><span>${t('w_cap')}</span><b>${fmt(cap)} ${t('u_kg')}</b></div>
+    <div class="row"><span>${t('w_mass')}</span><b class="${c.mass>cap?'bad':''}">${fmt(c.mass)} ${t('u_kg')}</b></div>
+  </div>
+  ${errs.map(e=>`<div class="err">${e}</div>`).join('')}
+  ${warns.map(e=>`<div class="warn">${e}</div>`).join('')}
+  <button class="btn primary" onclick="startFlight()" ${errs.length?'disabled':''}>${t('btn_launch')}</button>
+  <button class="btn" onclick="go('design')">${t('btn_back')}</button>`;
+}
+function viewWindow(){
+  return `${orbit(0)}
+    <h2>${t('w_title')}</h2><p class="hint">${t('w_text')}</p>
+    <div class="row" style="border:0"><span>${t('w_date')}</span><b id="wlabel">${offLabel(S.offset)}</b></div>
+    <input type="range" min="-6" max="6" step="1" value="${S.offset}" aria-label="${t('w_date')}" oninput="setOff(this.value)">
+    <div id="wdyn">${winDyn()}</div>`;
+}
+function setOff(v){
+  S.offset=parseInt(v,10);
+  document.getElementById('wlabel').textContent=offLabel(S.offset);
+  document.getElementById('wdyn').innerHTML=winDyn();
+}
+
+/* ---------- Flight ---------- */
+const SCN={
+ count:{kind:'earth',dur:5,t:[-5,0],alt:[0,0]},
+ lift:{kind:'earth',dur:7,t:[0,45],alt:[0,5]},
+ maxq:{kind:'earth',dur:6,t:[45,85],alt:[5,14]},
+ sep:{kind:'earth',dur:7,t:[150,170],alt:[65,85]},
+ fair:{kind:'earth',dur:5,t:[205,225],alt:[105,125]},
+ orbit:{kind:'space',dur:7,t:[490,540],alt:[200,200]},
+ tmi:{kind:'space',dur:6,t:[5400,5700],alt:[200,9000]},
+ cruise:{kind:'cruise',dur:0},
+ appr:{kind:'mars',dur:6,alt:[20000,500]},
+ moi:{kind:'mars',dur:8,alt:[500,400]},
+ entry:{kind:'mars',dur:11,alt:[125,0]},
+ touch:{kind:'mars',dur:4,alt:[0,0]},
+ deploy:{kind:'mars',dur:8,alt:[0,0]},
+ done:{kind:'mars',dur:0,alt:[0,0]}
+};
+const DURS={count:8,lift:25,maxq:20,sep:25,fair:20,orbit:35,tmi:30,appr:25,moi:55,entry:45,touch:12,deploy:30};
+Object.keys(DURS).forEach(k=>{SCN[k].dur=DURS[k];});
+function sceneList(m){
+  const l=['count','lift','maxq','sep','fair','orbit','tmi','cruise','appr'];
+  if(m.lands)l.push('entry','touch');else l.push('moi');
+  l.push('deploy','done');return l;
+}
+function sceneTxt(id){
+  const c=calc(),m=c.m;
+  let nk='sc_'+id+'_n',dk='sc_'+id+'_d';
+  if(id==='deploy'){nk='sc_deploy_n_'+m.id;dk='sc_deploy_d_'+m.id;}
+  if(id==='entry')dk='sc_entry_d_'+c.en.id;
+  return [t(nk),t(dk)];
+}
+const cl=(x,a,b)=>Math.max(a,Math.min(b,x));
+const lp=(a,b,k)=>a+(b-a)*k;
+const pad2=n=>String(n).padStart(2,'0');
+const rnd=i=>{const x=Math.sin(i*127.1+311.7)*43758.5453;return x-Math.floor(x);};
+const ease=k=>k*k*(3-2*k);
+let raf=0,lastT=0,uiCache={};
+function clock(sec){
+  const neg=sec<0;let s=Math.floor(Math.abs(sec));
+  const h=Math.floor(s/3600),m=Math.floor(s%3600/60);s=s%60;
+  return 'T'+(neg?'-':'+')+(h?pad2(h)+':':'')+pad2(m)+':'+pad2(s);
+}
+function cruiseP(f){return cl((f.tick+cl(f.ta/f.tp,0,1))/f.ticks,0,1);}
+function hudVals(f,id){
+  const sc=SCN[id],sp=sc.dur?cl(f.st/sc.dur,0,1):1,ku=' '+t('u_km');
+  let lab='hud_alt',val='',tm='';
+  if(sc.kind==='earth'||sc.kind==='space'){val=fmt(lp(sc.alt[0],sc.alt[1],sp))+ku;tm=clock(lp(sc.t[0],sc.t[1],sp));}
+  else if(id==='cruise'){lab='hud_trav';val=fmt(cruiseP(f)*680)+' '+t('u_mkm');tm='D+'+f.day;}
+  else if(id==='appr'){lab='hud_dist';val=fmt(lp(sc.alt[0],sc.alt[1],sp))+ku;tm='D+'+f.days;}
+  else if(id==='entry'){val=fmt(125*Math.pow(1-sp,1.6))+ku;const s=Math.round(sp*420);tm='EDL+'+pad2(Math.floor(s/60))+':'+pad2(s%60);}
+  else{const orb=!calc().m.lands;val=(id==='moi'?fmt(lp(500,400,sp)):orb?'400':'0')+ku;tm='D+'+f.days;}
+  return {lab,val,tm};
+}
+function startFlight(){
+  const c=calc(),days=travelDays(S.offset);
+  S.fl={tick:0,ticks:Math.ceil(days/5),days,day:0,health:100,dose:0,supplies:c.ls?c.ls.days:null,acc:0,sciMul:1,siteOdds:0,log:[],paused:false,ev:null,done:false,dust:false,
+    scenes:sceneList(c.m),si:0,st:0,ta:0,tp:280/Math.ceil(days/5),playing:true,launchFail:S.played&&Math.random()>c.La.rel,boom:false,bt:0,boomCode:null,outcome:null};
+  S.phase='flight';window.scrollTo(0,0);render();startLoop();
+}
+function restartFlight(){startFlight();}
+function startLoop(){cancelAnimationFrame(raf);lastT=performance.now();raf=requestAnimationFrame(frame);}
+function frame(now){
+  if(S.phase!=='flight'||!S.fl)return;
+  const dt=Math.min(0.1,(now-lastT)/1000);lastT=now;
+  const f=S.fl;
+  if(f.playing&&!f.paused&&!f.done)advance(dt*S.speed);
+  if(S.phase==='flight'){drawFlight();raf=requestAnimationFrame(frame);}
+}
+function advance(dt){
+  const f=S.fl,id=f.scenes[f.si],sc=SCN[id];
+  if(f.boom){f.bt+=dt;if(f.bt>2.8)finish(f.boomCode);return;}
+  if(id==='cruise'){
+    f.ta+=dt;
+    while(f.ta>=f.tp&&!f.paused&&!f.done&&f.scenes[f.si]==='cruise'){f.ta-=f.tp;step();}
+    return;
+  }
+  if(id==='done')return;
+  f.st+=dt;
+  if(id==='maxq'&&f.launchFail&&f.st>sc.dur*0.55){f.boom=true;f.bt=0;f.boomCode='launch';return;}
+  if(id==='entry'&&f.outcome==='land'&&f.st>sc.dur*0.8){f.boom=true;f.bt=0;f.boomCode='land';return;}
+  if(f.st>=sc.dur)nextScene();
+}
+function setScene(i){
+  const f=S.fl;f.si=i;f.st=0;f.ta=0;
+  if(f.scenes[i]==='orbit')f.log.push({k:'l_launch',p:{d:f.days}});
+  updateFlightUI();
+}
+function nextScene(){
+  const f=S.fl,id=f.scenes[f.si];
+  if(id==='moi'&&f.outcome==='orbit')return finish('orbit');
+  if(f.si<f.scenes.length-1)setScene(f.si+1);
+}
+function skipScene(){
+  const f=S.fl;if(!f||f.paused||f.done||f.boom)return;
+  const id=f.scenes[f.si];
+  if(id==='cruise'){let n=0;while(n++<120&&!f.paused&&!f.done&&f.scenes[f.si]==='cruise')step();return;}
+  if(id==='done')return;
+  if(id==='maxq'&&f.launchFail){f.boom=true;f.bt=0;f.boomCode='launch';return;}
+  if(id==='entry'&&f.outcome==='land'){f.boom=true;f.bt=0;f.boomCode='land';return;}
+  nextScene();
+}
+function togglePlay(){const f=S.fl;if(!f)return;f.playing=!f.playing;updateFlightUI();}
+function setSpeed(v){S.speed=parseFloat(v)||1;}
+function refresh(){if(S.phase==='flight')updateFlightUI();else render();}
+function step(){
+  const f=S.fl;if(!f||f.paused||f.done)return;
+  const c=calc();
+  f.tick++;f.day=Math.min(f.tick*5,f.days);
+  f.dose+=1.8*5*(1-c.sh.red);
+  if(f.supplies!==null)f.supplies-=5;
+  if(f.supplies!==null&&f.supplies<=0)return finish('supplies');
+  if(c.m.crew&&f.dose>600)return finish('radiation');
+  if(f.tick>=f.ticks)return arrive();
+  if(f.tick===Math.round(f.ticks*0.3))return ask('corr');
+  const r=Math.random();
+  const lowPower=(c.P.out-c.load)<=0.25*c.P.out;
+  if(Math.random()<[0.03,0.06,0.10][S.wx.A])return ask('storm');
+  if(r<0.06){
+    const h=Math.round(5+Math.random()*7);
+    f.health-=h;f.log.push({k:'l_debris',p:{day:f.day,h}});
+    if(f.health<=0)return finish('systems');
+  }else if(r<0.10)return ask('fault');
+  else if(r<0.13)return ask('comm');
+  else if(r<0.16&&lowPower)return ask('power');
+  else if(r<0.19&&c.m.crew)return ask('med');
+  refresh();
+}
+function ask(ev){
+  const f=S.fl;f.paused=true;f.ev=ev;refresh();
+}
+function choose(i){
+  const f=S.fl,c=calc(),ev=f.ev,red=c.sh.red;
+  f.paused=false;f.ev=null;
+  if(ev==='storm'){
+    const factor=i===0?0.3:1;
+    const h=Math.round(18*(1-red)*factor),r=Math.round(100*(1-red)*factor);
+    f.health-=h;f.dose+=r;
+    if(i===0&&f.supplies!==null)f.supplies-=2;
+    f.log.push({k:i===0?'l_storm_s':'l_storm',p:{day:f.day,h,r}});
+  }else if(ev==='fault'){
+    if(i===0){
+      if(Math.random()<0.6)f.log.push({k:'l_fault_ok',p:{day:f.day}});
+      else{f.health-=15;f.log.push({k:'l_fault_bad',p:{day:f.day,h:15}});}
+    }else{f.health-=5;f.log.push({k:'l_fault_bk',p:{day:f.day,h:5}});}
+  }else if(ev==='corr'){
+    if(i===0){f.acc+=0.05;f.log.push({k:'l_burn',p:{day:f.day}});}
+    else{f.acc-=0.05;f.log.push({k:'l_skip',p:{day:f.day}});}
+  }else if(ev==='comm'){
+    if(i===0){f.acc-=0.02;f.log.push({k:'l_comm_a',p:{day:f.day}});}
+    else{f.sciMul*=0.85;f.log.push({k:'l_comm_b',p:{day:f.day}});}
+  }else if(ev==='power'){
+    if(i===0){f.sciMul*=0.9;f.log.push({k:'l_power_a',p:{day:f.day}});}
+    else{f.health-=8;f.log.push({k:'l_power_b',p:{day:f.day,h:8}});}
+  }else if(ev==='med'){
+    if(i===0){f.supplies-=3;f.log.push({k:'l_med_a',p:{day:f.day}});}
+    else if(Math.random()<0.5)f.log.push({k:'l_med_ok',p:{day:f.day}});
+    else{f.sciMul*=0.85;f.log.push({k:'l_med_bad',p:{day:f.day}});}
+  }else if(ev==='site'){
+    if(i===0){f.siteOdds=0.05;f.sciMul*=0.85;f.log.push({k:'l_site_a'});}
+    else{f.siteOdds=-0.07;f.sciMul*=1.3;f.log.push({k:'l_site_b'});}
+    f.site=i;return afterSite();
+  }else if(ev==='orb'){
+    if(i===0){f.siteOdds=-0.04;f.sciMul*=1.2;f.log.push({k:'l_orb_a'});}
+    else{f.siteOdds=0.03;f.sciMul*=0.9;f.log.push({k:'l_orb_b'});}
+    return afterSite();
+  }else if(ev==='dust'){
+    if(i===0){
+      f.log.push({k:'l_wait'});
+      if(f.supplies!==null){f.supplies-=20;if(f.supplies<=0)return finish('supplies');}
+      else f.health-=3;
+    }else{f.dust=true;f.log.push({k:'l_go'});}
+    if(f.health<=0)return finish('systems');
+    return resolve();
+  }
+  if(f.health<=0)return finish('systems');
+  if(c.m.crew&&f.dose>600)return finish('radiation');
+  if(f.supplies!==null&&f.supplies<=0)return finish('supplies');
+  refresh();
+}
+function arrive(){
+  const f=S.fl;
+  f.day=f.days;
+  f.log.push({k:'l_arrive',p:{day:f.days}});
+  ask(calc().m.lands?'site':'orb');
+}
+function afterSite(){
+  if(Math.random()<dustRisk(S.offset)){S.fl.dustEvent=true;return ask('dust');}
+  resolve();
+}
+function odds(){
+  const f=S.fl,c=calc();
+  const base=c.m.lands?c.en.rel:0.95;
+  let p=base*(0.6+0.4*Math.max(0,f.health)/100)+f.acc+(f.siteOdds||0);
+  if(f.dust&&c.m.lands)p*=0.8;
+  return Math.max(0.05,Math.min(0.99,p));
+}
+function resolve(){
+  const f=S.fl,c=calc();
+  f.odds=odds();
+  f.outcome=Math.random()>f.odds?(c.m.lands?'land':'orbit'):'ok';
+  setScene(f.scenes.indexOf('appr'));
+}
+function finish(code){
+  S.played=true;
+  const f=S.fl,c=calc();
+  f.done=true;
+  const health=Math.max(0,Math.round(f.health));
+  const res={code,health,dose:Math.round(f.dose),odds:f.odds?Math.round(f.odds*100):null,budgetLeft:c.m.budget-c.cost,sci:0,score:0,stars:0};
+  if(code==='ok'){
+    let sci=c.pts*c.C.f*(health/100)*(f.sciMul||1);
+    if(f.dust&&c.P.solar)sci*=0.6;
+    res.sci=Math.round(sci);
+    res.score=Math.round(100+res.sci+Math.max(0,res.budgetLeft)/10+(c.m.crew?Math.max(0,200-res.dose/3):0));
+    res.stars=1+(health>=70?1:0)+((c.m.crew?res.dose<=400:res.sci>=80)?1:0);
+  }
+  res.wx={F:S.wx.F,A:S.wx.A,dust:Math.round(dustRisk(S.offset)*100),dustEvent:!!f.dustEvent,arrived:['ok','land','orbit'].includes(code)};
+  newWx();
+  S.res=res;S.phase='report';window.scrollTo(0,0);render();
+}
+function sheet(ev){
+  return `<div class="sheet" role="dialog" aria-modal="true"><h3>${t('ev_'+ev+'_t')}</h3><p>${t('ev_'+ev+'_x')}</p>
+    <button class="btn" onclick="choose(0)">${t('ev_'+ev+'_a')}</button>
+    <button class="btn" onclick="choose(1)">${t('ev_'+ev+'_b')}</button></div>`;
+}
+
+/* ---------- Flight screen (HTML) ---------- */
+function viewFlight(){
+  return `<div class="fbar"><button class="mini" onclick="go('design')">${t('btn_back')}</button><button class="mini" onclick="toggleLang()">${t('langbtn')}</button></div>
+  <div class="console">
+    <div class="hudrow">
+      <div class="hb"><small>${t('hud_scene')}</small><b id="h1"></b></div>
+      <div class="hb"><small id="h2l"></small><b id="h2"></b></div>
+      <div class="hb"><small>${t('hud_time')}</small><b id="h3" dir="ltr"></b></div>
+    </div>
+    <div class="vp">
+      <canvas id="cv"></canvas>
+      <div class="vtxt"><h3 id="vt"></h3><p id="vd"></p></div>
+      <div class="big" id="vb"></div>
+      <div class="vchip" id="vc" style="display:none"></div>
+      <button class="btn gold" id="vrep" style="display:none" onclick="finish('ok')">${t('btn_report')}</button>
+    </div>
+    <div class="ftabs" id="ftabs"></div>
+    <div class="ctrls">
+      <button class="cb" id="bplay" onclick="togglePlay()"></button>
+      <button class="cb alt" onclick="skipScene()">${t('btn_skip')}</button>
+      <select class="cb alt spd" aria-label="speed" onchange="setSpeed(this.value)">${[1,2,4,8].map(v=>`<option value="${v}" ${S.speed===v?'selected':''}>${v}x</option>`).join('')}</select>
+      <button class="cb alt" onclick="restartFlight()">${t('btn_restart')}</button>
+    </div>
+  </div>
+  <div id="fpanel"></div>`;
+}
+function setUI(key,id,val){
+  if(uiCache[key]===val)return;
+  uiCache[key]=val;const el=document.getElementById(id);if(el)el.textContent=val;
+}
+function updateFlightUI(){
+  const f=S.fl;if(!f||S.phase!=='flight')return;
+  const $=x=>document.getElementById(x);
+  if(!$('cv'))return;
+  const c=calc(),id=f.scenes[f.si],tx=sceneTxt(id);
+  if(!f.boom){setUI('vt','vt',tx[0]);setUI('vd','vd',tx[1]);}
+  setUI('h1','h1',tx[0]);
+  $('ftabs').innerHTML=f.scenes.map((s,i)=>`<span class="ftab ${i<f.si?'done':i===f.si?'now':''}" id="tab${i}">${i<f.si?'✓ ':''}${sceneTxt(s)[0]}</span>`).join('');
+  if(uiCache.si!==f.si){
+    uiCache.si=f.si;
+    const el=$('tab'+f.si),box=$('ftabs');
+    if(el&&box){const r=el.getBoundingClientRect(),b=box.getBoundingClientRect();box.scrollLeft+=(r.left+r.width/2)-(b.left+b.width/2);}
+  }
+  $('bplay').textContent=f.playing?t('btn_pause'):t('btn_play');
+  $('vrep').style.display=(id==='done'&&!f.done)?'block':'none';
+  const hp=Math.max(0,Math.round(f.health));
+  let h=gauge(t('f_health'),hp,100,hp+'%','life');
+  if(c.m.crew){
+    h+=gauge(t('f_rad'),f.dose,600,fmt(f.dose)+' / 600 '+t('u_msv'),'risk');
+    h+=gauge(t('f_sup'),Math.max(0,f.supplies),c.ls.days,fmt(Math.max(0,f.supplies))+' '+t('u_days'),'life');
+  }
+  h+=`<h3>${t('f_log')}</h3><ul class="log">${f.log.slice().reverse().slice(0,7).map(e=>`<li>${t(e.k,e.p)}</li>`).join('')}</ul>`;
+  if(f.paused&&f.ev)h+=`<div class="pad"></div>`+sheet(f.ev);
+  $('fpanel').innerHTML=h;
+}
+function hudUpdate(f,id){
+  if(!document.getElementById('h2'))return;
+  const v=hudVals(f,id);
+  setUI('h2l','h2l',t(v.lab));setUI('h2','h2',v.val);setUI('h3','h3',v.tm);
+  setUI('vb','vb',id==='count'&&!f.boom?String(cl(Math.ceil(5*(1-f.st/SCN.count.dur)),1,5)):'');
+  const ch=id==='cruise'?t('f_delay',{m:Math.max(1,Math.round(lp(1,12,cruiseP(f))))}):'';
+  setUI('vc','vc',ch);document.getElementById('vc').style.display=ch?'block':'none';
+  if(f.boom){setUI('vt','vt',t('sc_boom_n'));setUI('vd','vd',t(f.boomCode==='land'?'sc_crash_d':'sc_boom_d'));}
+}
+
+/* ---------- Scene drawing (canvas) ---------- */
+function mix(c1,c2,k){
+  const p=c=>[1,3,5].map(i=>parseInt(c.slice(i,i+2),16));
+  const a=p(c1),b=p(c2);
+  return 'rgb('+a.map((v,i)=>Math.round(lp(v,b[i],k))).join(',')+')';
+}
+function stars(g,W,H,alpha,tg,shift){
+  if(alpha<=0)return;
+  g.fillStyle='#fff';
+  for(let i=0;i<90;i++){
+    g.globalAlpha=alpha*(0.55+0.45*Math.sin(tg*1.7+i*1.3));
+    g.beginPath();g.arc(rnd(i)*W,(rnd(i+300)*H+shift)%H,0.5+rnd(i+600)*1.2,0,6.283);g.fill();
+  }
+  g.globalAlpha=1;
+}
+function spaceBg(g,W,H,tg,shift){
+  const gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#030614');gr.addColorStop(1,'#0C1840');
+  g.fillStyle=gr;g.fillRect(0,0,W,H);stars(g,W,H,1,tg,shift||0);
+}
+function bgSky(g,W,H,A,tg,shift){
+  const a=cl(A/70,0,1),gr=g.createLinearGradient(0,0,0,H);
+  gr.addColorStop(0,mix('#4A90E2','#02040C',a));gr.addColorStop(1,mix('#A9D2FF','#0B1633',a));
+  g.fillStyle=gr;g.fillRect(0,0,W,H);stars(g,W,H,cl((A-25)/40,0,1),tg,shift);
+}
+function clouds(g,W,H,off,A){
+  if(A>25)return;
+  g.fillStyle='rgba(255,255,255,'+(0.75*(1-A/25))+')';
+  for(let i=0;i<5;i++){
+    const x=rnd(i+20)*W,y=(rnd(i+40)*H*0.8+off)%H;
+    for(let k=0;k<4;k++){g.beginPath();g.ellipse(x+k*16,y+(k%2)*5,26,12,0,0,6.283);g.fill();}
+  }
+}
+function padDraw(g,W,H,gy){
+  g.fillStyle='#3E7D3A';g.fillRect(0,gy,W,H-gy+2);
+  g.fillStyle='#5C6068';g.fillRect(W*0.28,gy-H*0.02,W*0.44,H*0.02);
+  g.fillStyle='#7A7F88';g.fillRect(W*0.76,gy-H*0.17,W*0.03,H*0.17);
+}
+function earthBelow(g,W,H,A){
+  const R=W*1.5,hz=lp(H*0.06,H*0.24,cl((A-60)/140,0,1)),cy=H-hz+R;
+  g.fillStyle='rgba(110,180,255,.35)';g.beginPath();g.arc(W/2,cy,R+14,0,6.283);g.fill();
+  const gr=g.createLinearGradient(0,cy-R,0,cy-R+H*0.4);gr.addColorStop(0,'#3B84E0');gr.addColorStop(1,'#0E2F6B');
+  g.fillStyle=gr;g.beginPath();g.arc(W/2,cy,R,0,6.283);g.fill();
+}
+function earth(g,cx,cy,r,tg,rot){
+  const gr=g.createRadialGradient(cx-r*0.35,cy-r*0.35,r*0.1,cx,cy,r);
+  gr.addColorStop(0,'#6EB0FF');gr.addColorStop(0.7,'#2F6FD0');gr.addColorStop(1,'#12306A');
+  g.fillStyle=gr;g.beginPath();g.arc(cx,cy,r,0,6.283);g.fill();
+  g.save();g.beginPath();g.arc(cx,cy,r,0,6.283);g.clip();
+  g.fillStyle='rgba(76,160,84,.85)';
+  for(let i=0;i<7;i++){
+    const a=rnd(i+70)*6.283+rot,d=rnd(i+90)*r*0.75;
+    g.beginPath();g.ellipse(cx+Math.cos(a)*d,cy+Math.sin(a)*d*0.8,r*(0.12+rnd(i)*0.2),r*(0.1+rnd(i+5)*0.16),rnd(i+8)*3,0,6.283);g.fill();
+  }
+  g.restore();
+  g.strokeStyle='rgba(140,200,255,.45)';g.lineWidth=Math.max(2,r*0.04);
+  g.beginPath();g.arc(cx,cy,r+g.lineWidth/2,0,6.283);g.stroke();
+}
+function marsGlobe(g,cx,cy,r){
+  const gr=g.createRadialGradient(cx-r*0.35,cy-r*0.35,r*0.1,cx,cy,r);
+  gr.addColorStop(0,'#F0A57F');gr.addColorStop(0.6,'#C2502E');gr.addColorStop(1,'#5E2312');
+  g.fillStyle=gr;g.beginPath();g.arc(cx,cy,r,0,6.283);g.fill();
+  g.save();g.beginPath();g.arc(cx,cy,r,0,6.283);g.clip();
+  g.fillStyle='rgba(90,35,20,.45)';
+  for(let i=0;i<6;i++){
+    const a=rnd(i+30)*6.283,d=rnd(i+50)*r*0.7;
+    g.beginPath();g.ellipse(cx+Math.cos(a)*d,cy+Math.sin(a)*d*0.8,r*(0.1+rnd(i+2)*0.18),r*(0.08+rnd(i+4)*0.12),rnd(i)*3,0,6.283);g.fill();
+  }
+  g.fillStyle='rgba(255,255,255,.75)';g.beginPath();g.ellipse(cx,cy-r*0.93,r*0.28,r*0.08,0,0,6.283);g.fill();
+  g.restore();
+  g.strokeStyle='rgba(255,170,130,.35)';g.lineWidth=Math.max(1.5,r*0.03);
+  g.beginPath();g.arc(cx,cy,r+g.lineWidth/2,0,6.283);g.stroke();
+}
+function flameDraw(g,cx,y,w,len,tg){
+  const fl=len*(0.85+0.15*Math.sin(tg*40)),gr=g.createLinearGradient(0,y,0,y+fl);
+  gr.addColorStop(0,'#FFF6C8');gr.addColorStop(0.3,'#FFC24A');gr.addColorStop(1,'rgba(255,90,20,0)');
+  g.fillStyle=gr;g.beginPath();g.moveTo(cx-w/2,y);g.quadraticCurveTo(cx,y+fl*1.15,cx+w/2,y);g.fill();
+}
+function smoke(g,cx,gy,W,H,k,tg){
+  g.fillStyle='#F3F4F7';
+  for(let i=0;i<22;i++){
+    const age=(tg*0.7+i/22)%1,dir=i%2?1:-1;
+    const x=cx+dir*(8+age*W*0.38*(0.4+rnd(i))),y=gy-age*H*0.05-rnd(i+9)*6;
+    g.globalAlpha=k*(1-age)*0.85;g.beginPath();g.arc(x,y,10+age*H*0.07,0,6.283);g.fill();
+  }
+  g.globalAlpha=1;
+}
+function shipDraw(g,x,y,s,ang,panels,tg){
+  g.save();g.translate(x,y);g.rotate(ang);g.scale(s,s);
+  const pw=panels*46;
+  if(pw>1){
+    g.fillStyle='#2F63C8';g.fillRect(-12-pw,-8,pw,16);g.fillRect(12,-8,pw,16);
+    g.strokeStyle='rgba(255,255,255,.55)';g.lineWidth=0.8;
+    for(let i=1;i<pw/8;i++){g.beginPath();g.moveTo(-12-i*8,-8);g.lineTo(-12-i*8,8);g.moveTo(12+i*8,-8);g.lineTo(12+i*8,8);g.stroke();}
+    g.fillStyle='#8A93A6';g.fillRect(-14,-1.5,4,3);g.fillRect(10,-1.5,4,3);
+  }
+  g.fillStyle='#D9A82B';g.fillRect(-12,-18,24,36);
+  g.fillStyle='#F1CC62';g.fillRect(-12,-18,24,6);
+  g.fillStyle='#EEE';g.beginPath();g.ellipse(0,-23,9,3,0,0,6.283);g.fill();
+  g.fillStyle='#6B7385';g.fillRect(-3,18,6,4);
+  g.restore();
+}
+function rr(g,x,y,w,h,r){g.beginPath();if(g.roundRect)g.roundRect(x,y,w,h,r);else g.rect(x,y,w,h);g.fill();}
+function boomFx(g,x,y,tb,W){
+  const k=Math.max(0,tb),r=W*0.05+k*W*0.28,gr=g.createRadialGradient(x,y,0,x,y,r);
+  gr.addColorStop(0,'rgba(255,255,230,'+Math.max(0,1-k*0.4)+')');
+  gr.addColorStop(0.35,'rgba(255,190,60,'+Math.max(0,0.95-k*0.5)+')');
+  gr.addColorStop(0.7,'rgba(230,70,20,'+Math.max(0,0.7-k*0.5)+')');
+  gr.addColorStop(1,'rgba(80,20,10,0)');
+  g.fillStyle=gr;g.beginPath();g.arc(x,y,r,0,6.283);g.fill();
+  g.fillStyle='rgba(255,210,120,.9)';
+  for(let i=0;i<18;i++){const a=rnd(i)*6.283,d=r*(0.6+rnd(i+5)*0.9);g.beginPath();g.arc(x+Math.cos(a)*d,y+Math.sin(a)*d,2+rnd(i+9)*3,0,6.283);g.fill();}
+}
+function lowerStage(g,cx,base,RH,RW,type){
+  const h=RH*0.56;
+  if(type==='heavy'){
+    for(const sx of[-1,1]){
+      const bx=cx+sx*RW*0.78;
+      g.fillStyle='#DADFE8';g.fillRect(bx-RW*0.22,base-h*0.7,RW*0.44,h*0.7);
+      g.fillStyle='#B5BCC9';g.beginPath();g.moveTo(bx-RW*0.22,base-h*0.7);g.quadraticCurveTo(bx,base-h*0.7-RH*0.1,bx+RW*0.22,base-h*0.7);g.fill();
+    }
+  }
+  const gr=g.createLinearGradient(cx-RW/2,0,cx+RW/2,0);
+  gr.addColorStop(0,'#C9CFDB');gr.addColorStop(0.35,'#F5F7FB');gr.addColorStop(1,'#B7BECC');
+  g.fillStyle=gr;g.fillRect(cx-RW/2,base-h,RW,h);
+  g.fillStyle='#1B1F2A';g.fillRect(cx-RW/2,base-h*0.55,RW,RH*0.012);g.fillRect(cx-RW/2,base-h*0.93,RW,RH*0.012);
+  g.fillStyle='#C0392B';
+  for(const sx of[-1,1]){g.beginPath();g.moveTo(cx+sx*RW/2,base-h*0.32);g.lineTo(cx+sx*(RW/2+RW*0.55),base+RH*0.01);g.lineTo(cx+sx*RW/2,base);g.closePath();g.fill();}
+  g.fillStyle='#3A3F4B';g.beginPath();g.moveTo(cx-RW*0.3,base);g.lineTo(cx+RW*0.3,base);g.lineTo(cx+RW*0.2,base+RH*0.04);g.lineTo(cx-RW*0.2,base+RH*0.04);g.fill();
+}
+function upperStage(g,cx,ub,RH,RW,fair,tg){
+  const gr=g.createLinearGradient(cx-RW/2,0,cx+RW/2,0);
+  gr.addColorStop(0,'#C9CFDB');gr.addColorStop(0.35,'#F5F7FB');gr.addColorStop(1,'#B7BECC');
+  g.fillStyle=gr;g.fillRect(cx-RW/2,ub-RH*0.30,RW,RH*0.30);
+  g.fillStyle='#1B1F2A';g.fillRect(cx-RW/2,ub-RH*0.06,RW,RH*0.012);
+  g.fillStyle='#3A3F4B';g.beginPath();g.moveTo(cx-RW*0.18,ub);g.lineTo(cx+RW*0.18,ub);g.lineTo(cx+RW*0.12,ub+RH*0.025);g.lineTo(cx-RW*0.12,ub+RH*0.025);g.fill();
+  const ny=ub-RH*0.30;
+  if(!fair){
+    g.fillStyle=gr;g.beginPath();g.moveTo(cx-RW/2,ny);g.quadraticCurveTo(cx-RW/2,ny-RH*0.11,cx,ny-RH*0.14);g.quadraticCurveTo(cx+RW/2,ny-RH*0.11,cx+RW/2,ny);g.closePath();g.fill();
+    g.fillStyle='#1B1F2A';g.fillRect(cx-RW/2,ny-RH*0.012,RW,RH*0.012);
+  }else{
+    shipDraw(g,cx,ny-RH*0.05,RW/36,0,0,tg);
+    for(const sx of[-1,1]){
+      g.save();g.translate(cx+sx*RW/2,ny);g.rotate(sx*fair*0.9);g.translate(sx*fair*RW*0.8,fair*fair*RH*0.5);
+      g.globalAlpha=1-fair*0.5;g.fillStyle='#E6E9F0';
+      g.beginPath();g.moveTo(0,0);g.quadraticCurveTo(0,-RH*0.11,-sx*RW/2,-RH*0.14);g.lineTo(-sx*RW/2,0);g.closePath();g.fill();
+      g.restore();
+    }
+    g.globalAlpha=1;
+  }
+}
+function earthScene(g,W,H,id,sp,tg,f){
+  const sc=SCN[id],A=lp(sc.alt[0],sc.alt[1],sp),c=calc(),type=c.La.id;
+  bgSky(g,W,H,A,tg,id==='count'?0:tg*55);
+  const k=({small:0.78,medium:0.9,heavy:1})[type],RH=H*0.42*k,RW=RH*({small:0.15,medium:0.17,heavy:0.19})[type],cx=W/2;
+  const lift=id==='count'?0:id==='lift'?A*40:id==='maxq'?200+(A-5)*30:1e5;
+  const gy=H*0.80+lift;
+  if(lift<H){clouds(g,W,H,lift*0.6,A);padDraw(g,W,H,gy);}
+  if(A>40)earthBelow(g,W,H,A);
+  const base=H*0.80-Math.min(lift,H*0.10);
+  let sm=0;
+  if(id==='count')sm=cl((sp-0.64)/0.36,0,1)*0.8;
+  if(id==='lift')sm=cl(1-A/3,0,1);
+  if(sm>0)smoke(g,cx,gy,W,H,sm,tg);
+  if(f.boom){boomFx(g,cx,base-RH*0.5,f.bt,W);return;}
+  if(id==='maxq'){
+    const v=Math.sin(cl((sp-0.1)/0.7,0,1)*Math.PI);
+    if(v>0){g.fillStyle='rgba(255,255,255,'+0.4*v+')';g.beginPath();g.ellipse(cx,base-RH*0.62,RW*(1+v*0.9),RH*0.06,0,0,6.283);g.fill();}
+  }
+  const ub=base-RH*0.56;
+  if(id==='sep'){
+    const T=0.35;
+    if(sp<T){
+      flameDraw(g,cx,base+RH*0.04,RW*0.5,RH*0.5,tg);
+      lowerStage(g,cx,base,RH,RW,type);upperStage(g,cx,ub,RH,RW,0,tg);
+    }else{
+      const o=(sp-T)/(1-T);
+      g.save();g.translate(cx,base+o*o*H*0.9);g.rotate(o*0.35);lowerStage(g,0,0,RH,RW,type);g.restore();
+      if(sp>0.45)flameDraw(g,cx,ub+RH*0.025,RW*0.4,RH*0.3,tg);
+      upperStage(g,cx,ub,RH,RW,0,tg);
+      if(o<0.25){g.fillStyle='rgba(255,230,150,.9)';for(let i=0;i<10;i++){g.beginPath();g.arc(cx+(rnd(i)-0.5)*RW*2.4,ub+(rnd(i+3)-0.3)*RH*0.1+o*60,2,0,6.283);g.fill();}}
+    }
+    return;
+  }
+  if(id==='fair'){
+    flameDraw(g,cx,ub+RH*0.025,RW*0.4,RH*0.3,tg);
+    upperStage(g,cx,ub,RH,RW,sp<0.2?0:cl((sp-0.2)/0.6,0,1)+0.001,tg);
+    return;
+  }
+  const thrust=id==='count'?cl((sp-0.64)/0.36,0,1)*0.2:1,fl=RH*0.5*thrust;
+  if(fl>0){
+    flameDraw(g,cx,base+RH*0.04,RW*0.5,fl,tg);
+    if(type==='heavy')for(const sx of[-1,1])flameDraw(g,cx+sx*RW*0.78,base,RW*0.28,fl*0.7,tg);
+  }
+  lowerStage(g,cx,base,RH,RW,type);upperStage(g,cx,ub,RH,RW,0,tg);
+}
+function orbitRing(g,ox,oy,rx,ry,tilt,a0,a1,col,dash){
+  g.save();g.translate(ox,oy);g.rotate(tilt);g.strokeStyle=col;g.lineWidth=1.6;g.setLineDash(dash||[]);
+  g.beginPath();g.ellipse(0,0,rx,ry,0,a0,a1);g.stroke();g.restore();g.setLineDash([]);
+}
+function onRing(ox,oy,rx,ry,tilt,a){
+  const x=rx*Math.cos(a),y=ry*Math.sin(a),c=Math.cos(tilt),s=Math.sin(tilt);
+  return [ox+x*c-y*s,oy+x*s+y*c];
+}
+function marsSky(g,W,H,A,tg){
+  const k=1-cl(A/110,0,1),gr=g.createLinearGradient(0,0,0,H);
+  gr.addColorStop(0,mix('#0B0710','#9A5A3E',k));gr.addColorStop(1,mix('#1A0F18','#EBC19B',k));
+  g.fillStyle=gr;g.fillRect(0,0,W,H);stars(g,W,H,cl((A-70)/40,0,1),tg,0);
+}
+function marsGround(g,W,H,gy){
+  const gr=g.createLinearGradient(0,gy,0,H);gr.addColorStop(0,'#B4603C');gr.addColorStop(1,'#7A3A22');
+  g.fillStyle=gr;g.fillRect(0,gy,W,H-gy);
+  g.fillStyle='rgba(60,25,15,.5)';
+  for(let i=0;i<12;i++){g.beginPath();g.ellipse(rnd(i+7)*W,gy+6+rnd(i+8)*(H-gy-10),6+rnd(i)*14,3+rnd(i+3)*6,0,0,6.283);g.fill();}
+  g.fillStyle='rgba(235,190,150,.5)';g.fillRect(0,gy-2,W,3);
+}
+function dustVeil(g,W,H,tg){
+  g.fillStyle='rgba(200,115,65,.32)';g.fillRect(0,0,W,H);
+  g.strokeStyle='rgba(240,190,140,.35)';g.lineWidth=2;
+  for(let i=0;i<26;i++){
+    const y=rnd(i+11)*H,x=((rnd(i+12)*W+tg*(120+rnd(i)*160))%(W+120))-60;
+    g.beginPath();g.moveTo(x,y);g.lineTo(x+50+rnd(i)*50,y+6);g.stroke();
+  }
+}
+function capsuleDraw(g,x,y,s,glow){
+  if(glow>0){
+    const tail=g.createLinearGradient(0,y-130*s,0,y);tail.addColorStop(0,'rgba(255,150,60,0)');tail.addColorStop(1,'rgba(255,170,80,'+0.55*glow+')');
+    g.fillStyle=tail;g.fillRect(x-16*s,y-130*s,32*s,130*s);
+    const gr=g.createRadialGradient(x,y+22*s,4*s,x,y+22*s,70*s);
+    gr.addColorStop(0,'rgba(255,240,200,'+glow+')');gr.addColorStop(0.4,'rgba(255,140,40,'+glow*0.8+')');gr.addColorStop(1,'rgba(255,60,0,0)');
+    g.fillStyle=gr;g.beginPath();g.arc(x,y+22*s,70*s,0,6.283);g.fill();
+  }
+  g.fillStyle='#D5D9E2';g.beginPath();g.moveTo(x-9*s,y-24*s);g.lineTo(x+9*s,y-24*s);g.lineTo(x+22*s,y+18*s);g.lineTo(x-22*s,y+18*s);g.closePath();g.fill();
+  g.fillStyle='#4A3328';g.beginPath();g.ellipse(x,y+18*s,22*s,6*s,0,0,Math.PI);g.fill();
+}
+function chuteDraw(g,x,y,s,open){
+  const L=70*s*open,w=64*s*open,h=30*s*open;
+  g.strokeStyle='rgba(240,240,240,.8)';g.lineWidth=1;
+  for(const k of[-1,-0.5,0,0.5,1]){g.beginPath();g.moveTo(x+k*w/2,y-L);g.lineTo(x+k*8*s,y);g.stroke();}
+  g.fillStyle='#F4EFE6';g.beginPath();g.ellipse(x,y-L,w/2,h,0,Math.PI,0);g.fill();
+  g.fillStyle='#D9482B';g.beginPath();g.ellipse(x,y-L,w/6,h,0,Math.PI,0);g.fill();
+}
+function landerDraw(g,x,y,s,fl,tg){
+  g.fillStyle='#D9DDE6';g.beginPath();g.moveTo(x-12*s,y-22*s);g.lineTo(x+12*s,y-22*s);g.lineTo(x+18*s,y+4*s);g.lineTo(x-18*s,y+4*s);g.closePath();g.fill();
+  g.fillStyle='#8A93A6';g.fillRect(x-18*s,y+2*s,36*s,4*s);
+  g.strokeStyle='#8A93A6';g.lineWidth=2.5*s;
+  for(const sx of[-1,1]){g.beginPath();g.moveTo(x+sx*14*s,y+4*s);g.lineTo(x+sx*30*s,y+22*s);g.stroke();g.fillStyle='#8A93A6';g.fillRect(x+sx*30*s-6*s,y+22*s,12*s,3*s);}
+  if(fl>0)flameDraw(g,x,y+6*s,18*s,fl*s,tg);
+}
+function roverDraw(g,x,y,s,tg,moving){
+  g.fillStyle='#E7E9EE';g.fillRect(x-22*s,y-26*s,44*s,12*s);
+  g.fillStyle='#4D5A78';g.fillRect(x-22*s,y-16*s,44*s,3*s);
+  g.strokeStyle='#B9BFCC';g.lineWidth=2*s;g.beginPath();g.moveTo(x+12*s,y-26*s);g.lineTo(x+12*s,y-44*s);g.stroke();
+  g.fillStyle='#2D3446';g.fillRect(x+7*s,y-50*s,13*s,7*s);g.fillStyle='#7FD3E0';g.fillRect(x+16*s,y-48*s,3*s,3*s);
+  for(const wx of[-18,0,18]){
+    const rx=x+wx*s;g.fillStyle='#20242E';g.beginPath();g.arc(rx,y-6*s,7*s,0,6.283);g.fill();
+    g.strokeStyle='#8A93A6';g.lineWidth=1.5*s;const a=moving?tg*8:0;
+    g.beginPath();g.moveTo(rx,y-6*s);g.lineTo(rx+Math.cos(a)*6*s,y-6*s+Math.sin(a)*6*s);g.stroke();
+  }
+}
+function astroDraw(g,x,y,s,walk,tg){
+  const sw=Math.sin(tg*6)*walk*5*s;
+  g.fillStyle='#E9ECF2';g.fillRect(x-6*s+sw,y-14*s,5*s,14*s);g.fillRect(x+1*s-sw,y-14*s,5*s,14*s);
+  g.fillStyle='#3B4151';g.fillRect(x-6*s+sw,y-3*s,5*s,3*s);g.fillRect(x+1*s-sw,y-3*s,5*s,3*s);
+  g.fillStyle='#C7CCD8';g.fillRect(x-12*s,y-32*s,5*s,16*s);
+  g.fillStyle='#F4F6FA';rr(g,x-9*s,y-34*s,18*s,22*s,5*s);
+  g.strokeStyle='#F4F6FA';g.lineWidth=4*s;g.beginPath();g.moveTo(x+8*s,y-30*s);g.lineTo(x+13*s,y-20*s+sw*0.5);g.stroke();
+  g.beginPath();g.arc(x,y-40*s,8*s,0,6.283);g.fill();
+  g.fillStyle='#D9A82B';g.beginPath();g.ellipse(x+1*s,y-40*s,5.5*s,4.5*s,0,0,6.283);g.fill();
+}
+const kep=q=>{
+  const a=78,e=0.2051,M=q*Math.PI;let E=M;
+  for(let i=0;i<8;i++)E=M+e*Math.sin(E);
+  const th=2*Math.atan2(Math.sqrt(1+e)*Math.sin(E/2),Math.sqrt(1-e)*Math.cos(E/2));
+  const r=a*(1-e*e)/(1+e*Math.cos(th));
+  return [160+r*Math.cos(th),122-r*Math.sin(th)];
+};
+const DRAW={};
+['count','lift','maxq','sep','fair'].forEach(id=>{DRAW[id]=(g,W,H,sp,tg,f)=>earthScene(g,W,H,id,sp,tg,f);});
+DRAW.orbit=(g,W,H,sp,tg)=>{
+  spaceBg(g,W,H,tg,0);
+  const ox=W/2,oy=H*0.56,R=W*0.26,rx=W*0.43,ry=W*0.2,tilt=-0.4,a=tg*0.9;
+  orbitRing(g,ox,oy,rx,ry,tilt,Math.PI,Math.PI*2,'rgba(91,224,127,.35)');
+  const far=Math.sin(a)<0,[px,py]=onRing(ox,oy,rx,ry,tilt,a);
+  if(far)shipDraw(g,px,py,0.8,tilt+a+Math.PI/2,1,tg);
+  earth(g,ox,oy,R,tg,tg*0.12);
+  const gx=ox+R*0.28,gy2=oy+R*0.12;
+  g.fillStyle='#FFD43B';g.beginPath();g.arc(gx,gy2,4,0,6.283);g.fill();
+  g.strokeStyle='rgba(255,212,59,.6)';g.lineWidth=1.2;g.beginPath();g.arc(gx,gy2,4+((tg*1.5)%1)*10,0,6.283);g.stroke();
+  g.fillStyle='#FFE58A';g.font='12px sans-serif';g.textAlign='center';g.fillText(t('gs'),gx,gy2+20);
+  orbitRing(g,ox,oy,rx,ry,tilt,0,Math.PI,'rgba(91,224,127,.95)');
+  if(!far){
+    g.strokeStyle='rgba(91,224,127,.8)';g.lineWidth=1.2;g.setLineDash([3,4]);g.beginPath();g.moveTo(px,py);g.lineTo(gx,gy2);g.stroke();g.setLineDash([]);
+    shipDraw(g,px,py,0.8,tilt+a+Math.PI/2,1,tg);
+  }
+};
+DRAW.tmi=(g,W,H,sp,tg)=>{
+  spaceBg(g,W,H,tg,tg*30*(0.3+sp));
+  const e=ease(sp);
+  earth(g,lp(W*0.30,W*0.05,e),lp(H*0.78,H*0.98,e),lp(W*0.34,W*0.16,e),tg,tg*0.1);
+  marsGlobe(g,W*0.82,H*0.30,W*0.025+e*W*0.01);
+  const x=lp(W*0.42,W*0.62,e),y=lp(H*0.62,H*0.45,e);
+  g.setLineDash([3,6]);g.strokeStyle='rgba(255,255,255,.3)';g.beginPath();g.moveTo(W*0.30,H*0.78);g.lineTo(x,y);g.stroke();g.setLineDash([]);
+  g.save();g.translate(x,y);g.rotate(0.6);
+  flameDraw(g,0,22,14,lp(30,110,e),tg);
+  shipDraw(g,0,0,1,0,0.6,tg);g.restore();
+};
+DRAW.cruise=(g,W,H,sp,tg,f)=>{
+  spaceBg(g,W,H,tg,0);
+  const s=W/244,ox=W/2-160*s,oy=H*0.60-122*s,P=(x,y)=>[ox+x*s,oy+y*s],[cx,cy]=P(160,122),p=cruiseP(f);
+  g.strokeStyle='rgba(255,255,255,.14)';g.lineWidth=1;
+  for(const r of[62,94]){g.beginPath();g.arc(cx,cy,r*s,0,6.283);g.stroke();}
+  const path=(a,b)=>{g.beginPath();for(let i=0;i<=60;i++){const [x,y]=P(...kep(a+(b-a)*i/60));if(i)g.lineTo(x,y);else g.moveTo(x,y);}};
+  g.setLineDash([2*s,4*s]);g.strokeStyle='rgba(255,255,255,.32)';g.lineWidth=1.2;path(0,1);g.stroke();g.setLineDash([]);
+  if(p>0){g.lineCap='round';g.strokeStyle='rgba(94,214,222,.25)';g.lineWidth=8*s;path(0,p);g.stroke();g.strokeStyle='#5ED6DE';g.lineWidth=2.4*s;path(0,p);g.stroke();}
+  const gl=g.createRadialGradient(cx,cy,0,cx,cy,26*s);gl.addColorStop(0,'rgba(242,182,50,.5)');gl.addColorStop(1,'rgba(242,182,50,0)');
+  g.fillStyle=gl;g.beginPath();g.arc(cx,cy,26*s,0,6.283);g.fill();
+  g.fillStyle='#F7C948';g.beginPath();g.arc(cx,cy,8*s,0,6.283);g.fill();
+  const [ex,ey]=P(...kep(0)),[mx,my]=P(...kep(1));
+  earth(g,ex,ey,7*s,tg,0);marsGlobe(g,mx,my,5.5*s);
+  g.fillStyle='#B7C4E4';g.font=(11*s)+'px sans-serif';g.textAlign='center';
+  g.fillText(t('earth'),ex,ey+22*s);g.fillText(t('mars'),mx,my+20*s);
+  const q=Math.min(p,0.99),[x0,y0]=P(...kep(q)),[x1,y1]=P(...kep(q+0.01)),ang=Math.atan2(y1-y0,x1-x0),[sx,sy]=P(...kep(p));
+  const ph=(tg*1.2)%1;g.strokeStyle='rgba(94,214,222,'+(1-ph)+')';g.lineWidth=1.2;g.beginPath();g.arc(sx,sy,(4+ph*10)*s,0,6.283);g.stroke();
+  shipDraw(g,sx,sy,0.42*s,ang+Math.PI/2,0.55,tg);
+};
+DRAW.appr=(g,W,H,sp,tg)=>{
+  spaceBg(g,W,H,tg,0);
+  const e=ease(sp),m=calc().m,mx=W*0.64,my=H*0.5,mr=lp(W*0.05,W*0.31,e);
+  marsGlobe(g,mx,my,mr);
+  let x=lp(W*0.08,W*0.30,e),y=lp(H*0.80,H*0.60,e),sc=1,k=0;
+  g.setLineDash([4,6]);g.strokeStyle='rgba(255,255,255,.3)';g.lineWidth=1.2;g.beginPath();g.moveTo(0,H*0.84);g.quadraticCurveTo(W*0.2,H*0.8,x,y);g.stroke();g.setLineDash([]);
+  if(m.lands&&sp>0.72){
+    k=ease((sp-0.72)/0.28);
+    x=lp(x,mx-mr*0.5,k);y=lp(y,my-mr*0.05,k);sc=1-k*0.45;
+    const gl=g.createRadialGradient(x,y,2,x,y,34*k+4);
+    gl.addColorStop(0,'rgba(255,220,150,'+0.9*k+')');gl.addColorStop(1,'rgba(255,90,20,0)');
+    g.fillStyle=gl;g.beginPath();g.arc(x,y,34*k+4,0,6.283);g.fill();
+  }
+  shipDraw(g,x,y,sc,1.0,1-k*0.8,tg);
+};
+DRAW.moi=(g,W,H,sp,tg,f)=>{
+  spaceBg(g,W,H,tg,0);
+  const ox=W/2,oy=H*0.58,R=W*0.27,rx=W*0.42,ry=W*0.16,tilt=-0.35,fail=f.outcome==='orbit';
+  orbitRing(g,ox,oy,rx,ry,tilt,Math.PI,Math.PI*2,'rgba(91,224,127,.35)',fail?[4,5]:null);
+  marsGlobe(g,ox,oy,R);
+  orbitRing(g,ox,oy,rx,ry,tilt,0,Math.PI,fail?'rgba(255,255,255,.3)':'rgba(91,224,127,.9)',fail?[4,5]:null);
+  const aOf=k=>lp(Math.PI*0.9,Math.PI*2.4,k),kc=fail?Math.min(sp,0.55):sp;
+  let a=aOf(kc),[x,y]=onRing(ox,oy,rx,ry,tilt,a);
+  const [x2,y2]=onRing(ox,oy,rx,ry,tilt,a+0.02),hd=Math.atan2(y2-y,x2-x);
+  if(fail&&sp>0.55){const d=(sp-0.55)*W*2.6;x+=Math.cos(hd)*d;y+=Math.sin(hd)*d;}
+  const behind=Math.sin(a)<0&&Math.hypot(x-ox,y-oy)<R&&!(fail&&sp>0.55);
+  if(!behind){
+    g.save();g.translate(x,y);g.rotate(hd+Math.PI/2);
+    const burn=fail?sp<0.3:sp<0.5;
+    if(burn){g.save();g.scale(1,-1);flameDraw(g,0,20,12,lp(45,12,sp/0.5),tg);g.restore();}
+    shipDraw(g,0,0,0.8,0,1,tg);g.restore();
+  }
+};
+DRAW.entry=(g,W,H,sp,tg,f)=>{
+  const c=calc(),sys=c.en.id,gy=H*0.82,A=125*Math.pow(1-sp,1.6),s=W/360,cx=W/2;
+  marsSky(g,W,H,A,tg);marsGround(g,W,H,gy);
+  let y=lp(H*0.16,gy-34*s,Math.pow(sp,1.15));
+  if(f.boom){y=Math.min(gy-30*s,y+f.bt*H*1.1);if(y>=gy-30*s-1){boomFx(g,cx,gy-14*s,f.bt-0.5,W);return;}}
+  const glow=sp<0.32?1-sp/0.32:0;
+  if(sys==='powered'){
+    if(sp<0.4)capsuleDraw(g,cx,y,s,glow);
+    else landerDraw(g,cx,y,s*1.3,lp(30,55,Math.min(1,(sp-0.4)/0.3))*(sp>0.97?0.3:1),tg);
+  }else if(sys==='crane'){
+    if(sp<0.58){if(sp>0.32)chuteDraw(g,cx,y-14*s,s,cl((sp-0.32)/0.08,0,1));capsuleDraw(g,cx,y,s,glow);}
+    else{
+      const sy=lp(y,gy-130*s,ease(cl((sp-0.58)/0.12,0,1))),L=lp(30,100,cl((sp-0.7)/0.3,0,1))*s,ry2=Math.min(sy+L,gy-1);
+      g.strokeStyle='rgba(230,230,230,.8)';g.lineWidth=1.2;g.beginPath();g.moveTo(cx-10*s,sy+8*s);g.lineTo(cx-10*s,ry2-26*s);g.moveTo(cx+10*s,sy+8*s);g.lineTo(cx+10*s,ry2-26*s);g.stroke();
+      landerDraw(g,cx,sy,s,40,tg);roverDraw(g,cx,ry2,s*0.9,tg,false);
+    }
+  }else{
+    if(sp<0.8){if(sp>0.32)chuteDraw(g,cx,y-14*s,s,cl((sp-0.32)/0.08,0,1));capsuleDraw(g,cx,y,s,glow);}
+    else{
+      const b=Math.abs(Math.sin((sp-0.8)*16))*(1-sp)*70*s,by=gy-34*s-b;
+      g.fillStyle='rgba(235,235,240,.95)';g.strokeStyle='#8A93A6';g.lineWidth=2;g.beginPath();g.arc(cx,by,36*s,0,6.283);g.fill();g.stroke();
+      capsuleDraw(g,cx,by,s*0.7,0);
+      chuteDraw(g,cx+(sp-0.8)*W*0.6,y-80*s,s,0.6);
+    }
+  }
+  if(f.dust)dustVeil(g,W,H,tg);
+};
+DRAW.touch=(g,W,H,sp,tg,f)=>{
+  const gy=H*0.82,s=W/360;
+  marsSky(g,W,H,0,tg);marsGround(g,W,H,gy);
+  landerDraw(g,W/2,gy-25*s,s*1.3,0,tg);
+  if(sp<0.8){g.fillStyle='rgba(225,170,125,'+0.7*(1-sp)+')';for(let i=0;i<14;i++){const a=i/14;g.beginPath();g.arc(W/2+(a-0.5)*W*0.7*(0.3+sp),gy-6-rnd(i)*20*sp,10+sp*26,0,6.283);g.fill();}}
+  if(f.dust)dustVeil(g,W,H,tg);
+};
+DRAW.deploy=(g,W,H,sp,tg,f)=>{
+  const m=calc().m,s=W/360,gy=H*0.82;
+  if(!m.lands){
+    spaceBg(g,W,H,tg,0);marsGlobe(g,W/2,H*1.2,W*0.95);
+    const shx=W/2,shy=H*0.38,pan=cl(sp*1.5,0,1);
+    g.fillStyle='rgba(120,255,200,.14)';g.beginPath();g.moveTo(shx,shy+20);g.lineTo(shx-W*0.28,H*0.72);g.lineTo(shx+W*0.28,H*0.72);g.closePath();g.fill();
+    const scan=lp(0.72,0.9,(tg*0.5)%1);g.strokeStyle='rgba(120,255,200,.9)';g.lineWidth=2;g.beginPath();g.moveTo(W*0.28,H*scan);g.lineTo(W*0.72,H*scan);g.stroke();
+    shipDraw(g,shx,shy,1.5,0,pan,tg);
+    return;
+  }
+  marsSky(g,W,H,0,tg);marsGround(g,W,H,gy);
+  const e=ease(sp);
+  if(m.id==='rover'){
+    landerDraw(g,W*0.24,gy-25*s,s*1.3,0,tg);
+    const rx=lp(W*0.30,W*0.68,e);
+    g.strokeStyle='rgba(60,25,15,.5)';g.setLineDash([2,4]);g.beginPath();g.moveTo(W*0.3,gy+8*s);g.lineTo(rx,gy+8*s);g.stroke();g.setLineDash([]);
+    roverDraw(g,rx,gy+4*s,s*1.4,tg,sp<1);
+  }else{
+    landerDraw(g,W*0.2,gy-25*s,s*1.5,0,tg);
+    for(let i=0;i<4;i++){
+      const k=cl((sp-i*0.15)/0.4,0,1);
+      if(sp>i*0.15)astroDraw(g,lp(W*0.30,W*0.46+i*W*0.12,ease(k)),gy+8*s,s*1.3,k<1?1:0,tg);
+    }
+  }
+  if(f.dust)dustVeil(g,W,H,tg);
+};
+DRAW.done=(g,W,H,sp,tg,f)=>{
+  DRAW.deploy(g,W,H,1,tg,f);
+  const ex=W*0.84,ey=H*0.2;
+  earth(g,ex,ey,7,tg,0);
+  g.setLineDash([3,6]);g.lineDashOffset=-tg*20;g.strokeStyle='rgba(255,230,120,.7)';g.lineWidth=1.5;
+  g.beginPath();g.moveTo(calc().m.lands?W*0.5:W*0.5,calc().m.lands?H*0.7:H*0.4);g.lineTo(ex,ey);g.stroke();g.setLineDash([]);g.lineDashOffset=0;
+};
+function drawFlight(){
+  const cv=document.getElementById('cv');if(!cv||!S.fl)return;
+  const dpr=window.devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight;if(!W||!H)return;
+  if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);}
+  const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
+  const f=S.fl,id=f.scenes[f.si],sc=SCN[id],sp=sc.dur?cl(f.st/sc.dur,0,1):1,tg=performance.now()/1000;
+  g.textAlign='start';
+  DRAW[id](g,W,H,sp,tg,f);
+  hudUpdate(f,id);
+}
+
+/* ---------- Report ---------- */
+function wxReport(r){
+  const w=r.wx;
+  if(!w||r.code==='launch')return '';
+  return `<h3>${t('r_wx')}</h3><ul class="plain">
+    <li>${t('r_wx_solar',{f:t('wx_lvl_'+w.F),a:t('wx_lvl_'+w.A)})}</li>
+    ${w.arrived?`<li>${t(w.dustEvent?'r_wx_dust_y':'r_wx_dust_n',{n:w.dust})}</li>`:''}</ul>
+    <p class="hint">${t('r_wx_note')}</p>`;
+}
+function viewReport(){
+  const r=S.res,c=calc(),f=S.fl,ok=r.code==='ok';
+  const title=ok?t('r_ok'):t('r_'+r.code);
+  const text=ok?t('r_ok_'+c.m.id):t('r_'+r.code+'_x');
+  let h=orbit(ok?1:Math.min(1,f.tick/f.ticks),'',ok?'ok':'fail');
+  h+=`<div class="result ${ok?'ok':'fail'}"><h2>${title}</h2><p>${text}</p>
+    ${ok?`<div class="stars" aria-label="${r.stars} / 3">${'★'.repeat(r.stars)}${'☆'.repeat(3-r.stars)}</div>`:''}</div>`;
+  h+=`<div>`;
+  if(r.odds!==null)h+=`<div class="row"><span>${t('r_odds',{n:r.odds})}</span></div>`;
+  h+=`<div class="row"><span>${t('r_health',{n:r.health})}</span></div>`;
+  if(c.m.crew)h+=`<div class="row"><span>${t('r_dose',{n:r.dose})}</span></div>`;
+  if(ok){
+    h+=`<div class="row"><span>${t('r_sci',{n:r.sci})}</span></div>`;
+    h+=`<div class="row"><span>${t('r_cost',{n:fmt(r.budgetLeft)})}</span></div>`;
+    h+=`<div class="row"><b>${t('r_score',{n:fmt(r.score)})}</b></div>`;
+  }
+  h+=`</div>${wxReport(r)}<h3>${t('r_why')}</h3><ul class="plain">${f.log.map(e=>`<li>${t(e.k,e.p)}</li>`).join('')}</ul>`;
+  const tail=[];
+  if(c.m.lands&&f.site===1)tail.push('fa_jezero');
+  if(c.m.crew)tail.push('fa_rad');
+  if(c.m.lands)tail.push('fa_land');
+  if(c.P.solar){tail.push('fa_dustseason');tail.push('fa_dust');}
+  const facts=tail.concat(['fa_window','fa_delay']);
+  h+=`<h3>${t('r_facts')}</h3><ul class="plain">${facts.slice(0,3).map(k=>`<li>${t(k)}<span class="src">${t('src')} ${FSRC[k]?FSRC[k][S.lang]:''}</span></li>`).join('')}</ul>`;
+  h+=`<button class="btn primary" onclick="go('design')">${t('btn_redesign')}</button>
+      <button class="btn" onclick="newMission()">${t('btn_new')}</button>`;
+  return h;
+}
+
+/* ---------- Intro and About ---------- */
+const SOURCES=[
+ {n:{en:'NASA Mars Exploration',ar:'استكشاف المريخ - ناسا'},u:'science.nasa.gov/mars/'},
+ {n:{en:'NASA Mars Fact Sheet',ar:'صحيفة حقائق المريخ - ناسا'},u:'nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html'},
+ {n:{en:'NASA Jet Propulsion Laboratory',ar:'مختبر الدفع النفاث - ناسا'},u:'www.jpl.nasa.gov'},
+ {n:{en:'NASA Eyes on the Solar System',ar:'عيون ناسا على المجموعة الشمسية'},u:'eyes.nasa.gov'},
+ {n:{en:'JPL Horizons (orbit data)',ar:'JPL Horizons (بيانات المدارات)'},u:'ssd.jpl.nasa.gov/horizons/'}
+];
+const FSRC={
+ fa_window:{en:'NASA Mars Exploration',ar:'استكشاف المريخ - ناسا'},
+ fa_delay:{en:'NASA Mars Exploration',ar:'استكشاف المريخ - ناسا'},
+ fa_rad:{en:'NASA Curiosity mission',ar:'بعثة كيوريوسيتي - ناسا'},
+ fa_land:{en:'NASA / JPL',ar:'ناسا / JPL'},
+ fa_dustseason:{en:'NASA Mars Exploration',ar:'استكشاف المريخ - ناسا'},
+ fa_dust:{en:'NASA Opportunity mission',ar:'بعثة أوبورتيونيتي - ناسا'},
+ fa_jezero:{en:'NASA Perseverance mission',ar:'بعثة بيرسيفرنس - ناسا'}
+};
+function teamLine(){
+  return TEAM_NAME?`<p class="team"><b>${TEAM_NAME}</b>${t('team_role')}</p>`:'';
+}
+function viewIntro(){
+  return `${orbit(0.45)}
+    <h2 class="big">${t('intro_h')}</h2><p>${t('intro_p')}</p>
+    <ol class="how">${[1,2,3,4].map(i=>`<li>${t('intro_'+i)}</li>`).join('')}</ol>
+    <p class="hint">${t('intro_time')}</p>
+    <button class="btn primary" onclick="go('design')">${t('btn_start')}</button>
+    <button class="btn" onclick="go('about')">${t('btn_about')}</button>
+    ${dip?`<button class="btn" onclick="installApp()">${t('btn_install')}</button>`:''}
+    <p class="hint">${t('intro_sub')}</p>${teamLine()}`;
+}
+function viewAbout(){
+  return `<h2>${t('about_h')}</h2><p>${t('about_p')}</p>
+    <h3>${t('about_real')}</h3><ul class="plain">${[1,2,3,4,5,6].map(i=>`<li>${t('ab_'+i)}</li>`).join('')}</ul>
+    <h3>${t('about_mars')}</h3><ul class="plain">${[1,2,3,4].map(i=>`<li>${t('mf_'+i)}</li>`).join('')}</ul>
+    <p class="hint">${t('mf_src')}</p>
+    <h3>${t('about_sim')}</h3><ul class="plain">${[1,2,3,4].map(i=>`<li>${t('ab_s'+i)}</li>`).join('')}</ul>
+    <h3>${t('about_src')}</h3><p class="hint">${t('about_src_p')}</p>
+    <ul class="plain">${SOURCES.map(x=>`<li><a href="https://${x.u}" target="_blank" rel="noopener">${x.n[S.lang]}</a><span class="src">${x.u}</span></li>`).join('')}</ul>
+    <p class="hint">${t('about_ai')}</p>${teamLine()}
+    <button class="btn primary" onclick="go(S.prev)">${t('btn_close')}</button>`;
+}
+
+/* ---------- Actions and render ---------- */
+function pick(group,id){
+  if(group==='mission')setMission(id);
+  else if(group==='instr'){const i=S.sel.instr.indexOf(id);if(i>=0)S.sel.instr.splice(i,1);else S.sel.instr.push(id);}
+  else S.sel[group]=id;
+  render();
+}
+function go(ph){
+  if(ph==='about'&&S.phase!=='about')S.prev=S.phase;
+  if(ph!=='flight')clearInterval(S.timer);
+  S.phase=ph;window.scrollTo(0,0);render();
+}
+function newMission(){S.offset=0;setMission('orbiter');go('design');}
+function toggleLang(){S.lang=S.lang==='en'?'ar':'en';render();}
+function render(){
+  document.documentElement.lang=S.lang;
+  document.documentElement.dir=S.lang==='ar'?'rtl':'ltr';
+  document.title=t('title');
+  const views={intro:viewIntro,about:viewAbout,design:viewDesign,window:viewWindow,flight:viewFlight,report:viewReport};
+  uiCache={};
+  document.getElementById('app').innerHTML=(S.phase==='flight'?'':head())+views[S.phase]();
+  if(S.phase==='flight'){updateFlightUI();drawFlight();}
+}
+render();
+</script>
+</body>
+</html>
